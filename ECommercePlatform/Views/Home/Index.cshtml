@@ -1,0 +1,29 @@
+﻿@model IEnumerable<ECommercePlatform.Models.Product>
+
+@{
+    ViewData["Title"] = "首頁總覽";
+}
+
+<h1>🛒 電商平台首頁總覽</h1>
+
+<nav style="margin-bottom: 30px;">
+    <a href="/project/singin" style="margin-right: 20px;">🔑 登入 / 註冊</a>
+    <a href="/project/Index" style="margin-right: 20px;">💬 留言系統</a>
+    <a href="#" onclick="alert('尚未實作');" style="margin-right: 20px;">👤 會員中心</a>
+    <a href="#" onclick="alert('尚未實作');" style="margin-right: 20px;">🛍️ 商品管理</a>
+    <a href="#" onclick="alert('尚未實作');" style="margin-right: 20px;">📦 訂單管理</a>
+</nav>
+
+<section>
+    <h2>🔥 精選商品</h2>
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+        @foreach (var product in Model)
+        {
+            <div style="border: 1px solid #ccc; padding: 10px; width: 200px;">
+                <h4>@product.Name</h4>
+                <p>價格: $@product.Price</p>
+                <p>@product.Description</p>
+            </div>
+        }
+    </div>
+</section>

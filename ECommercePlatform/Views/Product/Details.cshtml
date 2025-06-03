@@ -1,0 +1,44 @@
+﻿@model ECommercePlatform.Models.Product
+
+<h1>@Model.Name</h1>
+
+<img src="@Model.ImageUrl" alt="@Model.Name" class="img-fluid" />
+<p>價格: $@Model.Price</p>
+<p>@Model.Description</p>
+
+<a asp-controller="Product" asp-action="Index" class="btn btn-secondary">返回商品列表</a>
+
+<hr />
+<h4>購物操作</h4>
+<form method="post" action="/Cart/Add/@Model.Id">
+    <div class="form-group">
+        <label>數量</label>
+        <input type="number" name="quantity" value="1" min="1" class="form-control" style="width: 100px;" />
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">加入購物車</button>
+</form>
+
+<hr />
+<h3>也許你會喜歡</h3>
+@if (ViewBag.RelatedProducts != null && ViewBag.RelatedProducts.Count > 0)
+{
+    <div class="row">
+        @foreach (var rec in ViewBag.RelatedProducts)
+        {
+            <div class="col-md-3">
+                <div class="card mb-3">
+                    <img src="@rec.ImageUrl" class="card-img-top" style="height:200px; object-fit:cover;" />
+                    <div class="card-body">
+                        <h5 class="card-title">@rec.Name</h5>
+                        <p class="card-text text-muted">@rec.Price.ToString("C")</p>
+                        <a href="/Product/Details/@rec.Id" class="btn btn-sm btn-outline-primary">查看商品</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <p>目前尚無推薦資料。</p>
+}

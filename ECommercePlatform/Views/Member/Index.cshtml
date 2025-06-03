@@ -1,0 +1,30 @@
+@model ECommercePlatform.Models.User
+
+<h2>會員中心</h2>
+
+<table class="table table-bordered">
+    <tr>
+        <th>帳號</th>
+        <td>@Model.Username</td>
+    </tr>
+    <tr>
+        <th>Email</th>
+        <td>@Model.Email</td>
+    </tr>
+    <tr>
+        <th>姓名</th>
+        <td>@(Model.FirstName + " " + Model.LastName)</td>
+    </tr>
+    <tr>
+        <th>電話</th>
+        <td>@Model.PhoneNumber</td>
+    </tr>
+    <tr>
+        <th>地址</th>
+        <td>@Model.Address</td>
+    </tr>
+    <tr>
+        <th>註冊時間</th>
+        <td>@Model.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+    </tr>
+</table>
