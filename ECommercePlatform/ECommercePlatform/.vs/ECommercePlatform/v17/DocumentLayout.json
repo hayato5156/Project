@@ -1,0 +1,228 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|d:\\0.ide\\[code\u0026project]\\vistual studio\\update\\ecommerceplatform\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|d:\\0.ide\\[code\u0026project]\\vistual studio\\update\\ecommerceplatform\\controllers\\admin\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:controllers\\admin\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|d:\\0.ide\\[code\u0026project]\\vistual studio\\update\\ecommerceplatform\\controllers\\admin\\reviewscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:controllers\\admin\\reviewscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|d:\\0.ide\\[code\u0026project]\\vistual studio\\update\\ecommerceplatform\\controllers\\projectcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:controllers\\projectcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|d:\\0.ide\\[code\u0026project]\\vistual studio\\update\\ecommerceplatform\\controllers\\admin\\productsadmincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:controllers\\admin\\productsadmincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|d:\\0.ide\\[code\u0026project]\\vistual studio\\update\\ecommerceplatform\\controllers\\ordercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:controllers\\ordercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|d:\\0.ide\\[code\u0026project]\\vistual studio\\update\\ecommerceplatform\\controllers\\membercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:controllers\\membercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|d:\\0.ide\\[code\u0026project]\\vistual studio\\update\\ecommerceplatform\\controllers\\admin\\engineerscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:controllers\\admin\\engineerscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|d:\\0.ide\\[code\u0026project]\\vistual studio\\update\\ecommerceplatform\\controllers\\engineercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:controllers\\engineercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|d:\\0.ide\\[code\u0026project]\\vistual studio\\update\\ecommerceplatform\\controllers\\cartcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:controllers\\cartcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|d:\\0.ide\\[code\u0026project]\\vistual studio\\update\\ecommerceplatform\\controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|d:\\0.ide\\[code\u0026project]\\vistual studio\\update\\ecommerceplatform\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{40ea2e6b-2121-4bb8-a43e-c83c04b51041}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "launchSettings.json",
+              "DocumentMoniker": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Properties\\launchSettings.json",
+              "RelativeDocumentMoniker": "Properties\\launchSettings.json",
+              "ToolTip": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Properties\\launchSettings.json",
+              "RelativeToolTip": "Properties\\launchSettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAAgAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-06-03T08:37:24.568Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "UsersController.cs",
+              "DocumentMoniker": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\Admin\\UsersController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Admin\\UsersController.cs",
+              "ToolTip": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\Admin\\UsersController.cs",
+              "RelativeToolTip": "Controllers\\Admin\\UsersController.cs",
+              "ViewState": "AgIAAFUAAAAAAAAAAAAkwGYAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-03T08:36:05.185Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "ReviewsController.cs",
+              "DocumentMoniker": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\Admin\\ReviewsController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Admin\\ReviewsController.cs",
+              "ToolTip": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\Admin\\ReviewsController.cs",
+              "RelativeToolTip": "Controllers\\Admin\\ReviewsController.cs",
+              "ViewState": "AgIAACEAAAAAAAAAAAAAACEAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-03T08:36:02.24Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "projectController.cs",
+              "DocumentMoniker": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\projectController.cs",
+              "RelativeDocumentMoniker": "Controllers\\projectController.cs",
+              "ToolTip": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\projectController.cs",
+              "RelativeToolTip": "Controllers\\projectController.cs",
+              "ViewState": "AgIAAG4AAAAAAAAAAAAAAHMAAAAjAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-03T08:35:56.739Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ProductsAdminController.cs",
+              "DocumentMoniker": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\Admin\\ProductsAdminController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Admin\\ProductsAdminController.cs",
+              "ToolTip": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\Admin\\ProductsAdminController.cs",
+              "RelativeToolTip": "Controllers\\Admin\\ProductsAdminController.cs",
+              "ViewState": "AgIAAFAAAAAAAAAAAAAAAFAAAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-03T08:35:54.582Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "OrderController.cs",
+              "DocumentMoniker": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\OrderController.cs",
+              "RelativeDocumentMoniker": "Controllers\\OrderController.cs",
+              "ToolTip": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\OrderController.cs",
+              "RelativeToolTip": "Controllers\\OrderController.cs",
+              "ViewState": "AgIAAB4AAAAAAAAAAAAAADgAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-03T08:35:51.222Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "MemberController.cs",
+              "DocumentMoniker": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\MemberController.cs",
+              "RelativeDocumentMoniker": "Controllers\\MemberController.cs",
+              "ToolTip": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\MemberController.cs",
+              "RelativeToolTip": "Controllers\\MemberController.cs",
+              "ViewState": "AgIAADkAAAAAAAAAAAAwwEgAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-03T08:35:45.647Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "EngineersController.cs",
+              "DocumentMoniker": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\Admin\\EngineersController.cs",
+              "RelativeDocumentMoniker": "Controllers\\Admin\\EngineersController.cs",
+              "ToolTip": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\Admin\\EngineersController.cs",
+              "RelativeToolTip": "Controllers\\Admin\\EngineersController.cs",
+              "ViewState": "AgIAADUAAAAAAAAAAAAUwEQAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-03T08:35:41.948Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "EngineerController.cs",
+              "DocumentMoniker": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\EngineerController.cs",
+              "RelativeDocumentMoniker": "Controllers\\EngineerController.cs",
+              "ToolTip": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\EngineerController.cs",
+              "RelativeToolTip": "Controllers\\EngineerController.cs",
+              "ViewState": "AgIAACoAAAAAAAAAAAAAADAAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-03T08:35:37.282Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "CartController.cs",
+              "DocumentMoniker": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\CartController.cs",
+              "RelativeDocumentMoniker": "Controllers\\CartController.cs",
+              "ToolTip": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\CartController.cs",
+              "RelativeToolTip": "Controllers\\CartController.cs",
+              "ViewState": "AgIAADAAAAAAAAAAAAAUwD8AAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-03T08:35:32.744Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "AccountController.cs",
+              "DocumentMoniker": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\AccountController.cs",
+              "RelativeDocumentMoniker": "Controllers\\AccountController.cs",
+              "ToolTip": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Controllers\\AccountController.cs",
+              "RelativeToolTip": "Controllers\\AccountController.cs",
+              "ViewState": "AgIAAEUAAAAAAAAAAAAUwFQAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-03T08:35:23.701Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "Program.cs",
+              "DocumentMoniker": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "D:\\0.IDE\\[Code\u0026Project]\\Vistual Studio\\Update\\ECommercePlatform\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAABwAAAAAAAAAAAAowCUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-03T07:21:15.308Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

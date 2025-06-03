@@ -1,0 +1,31 @@
+@model IEnumerable<ECommercePlatform.Models.Review>
+
+<h2>商品評價管理</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>時間</th>
+            <th>商品</th>
+            <th>會員</th>
+            <th>星等</th>
+            <th>內容</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var review in Model)
+    {
+        <tr>
+            <td>@review.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+            <td>@review.Product.Name</td>
+            <td>@review.User.Username</td>
+            <td>@review.Rating</td>
+            <td>@review.Content</td>
+            <td>
+                <a class="btn btn-sm btn-danger" href="/admin/reviews/delete/@review.Id" onclick="return confirm('確定刪除這筆評價嗎？')">刪除</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

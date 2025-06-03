@@ -1,0 +1,62 @@
+
+@{
+    ViewData["Title"] = "留言版";
+    var messages = ViewBag.messages as List<ECommercePlatform.Models.Messages>;
+}
+
+<h2>留言列表</h2>
+<p>
+    📝 留言總數：@ViewBag.totalMessages |
+    ⭐ 平均評分：@ViewBag.averageScore.ToString("0.0")
+</p>
+
+<form method="get" asp-controller="project" asp-action="Index">
+    <input type="hidden" name="ID" value="@ViewBag.ID" />
+    <input type="hidden" name="userName" value="@ViewBag.name" />
+    <input type="hidden" name="buyOrSell" value="@ViewBag.identity" />
+
+    <label>排序方式：</label>
+    <select name="sort">
+        <option value="latest">最新留言</option>
+        <option value="oldest">最舊留言</option>
+        <option value="highscore">評分最高</option>
+        <option value="lowscore">評分最低</option>
+    </select>
+
+    <label>關鍵字搜尋：</label>
+    <input type="text" name="keyword" placeholder="輸入關鍵字" />
+
+    <label>評分過濾：</label>
+    <select name="scoreFilter">
+        <option value="">--全部--</option>
+        <option value="5">5 星</option>
+        <option value="4">4 星</option>
+        <option value="3">3 星</option>
+        <option value="2">2 星</option>
+        <option value="1">1 星</option>
+    </select>
+
+    <button type="submit">篩選</button>
+</form>
+
+<div id="messageResult">
+<div class="row">
+    @foreach (var m in messages)
+    {
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-primary">
+                <div class="card-header bg-primary text-white">
+                    <strong>@m.userName</strong> - 評分：@m.score
+                </div>
+                <div class="card-body">
+                    <p class="card-text">@m.main</p>
+                </div>
+                <div class="card-footer text-muted">
+                    @m.date.ToString("yyyy-MM-dd HH:mm")
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<script src="/js/messages-filter.js"></script>

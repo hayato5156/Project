@@ -1,0 +1,24 @@
+@model ECommercePlatform.Models.User
+
+<h2>編輯個人資料</h2>
+
+<form method="post">
+    <div class="form-group">
+        <label>名字</label>
+        <input asp-for="FirstName" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label>姓氏</label>
+        <input asp-for="LastName" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label>電話</label>
+        <input asp-for="PhoneNumber" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label>地址</label>
+        <input asp-for="Address" class="form-control" />
+    </div>
+    <button type="submit" class="btn btn-success mt-2">儲存變更</button>
+    <a href="/Member" class="btn btn-secondary mt-2">返回</a>
+</form>
