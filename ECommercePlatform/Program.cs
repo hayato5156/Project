@@ -38,6 +38,7 @@ builder.Services.AddScoped<OperationLogService>();
 var app = builder.Build();
 
 app.UseStaticFiles();
+
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -46,12 +47,5 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    var featuredProducts = dbContext.Products.Take(3).ToList();
-    Console.WriteLine($"Featured Products Count: {featuredProducts.Count}");
-}
 
 app.Run();

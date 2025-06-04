@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace ECommercePlatform.Controllers
 {
-}
     public class LogsControllerV2 : Controller // 已更名以避免重複定義
     {
         private readonly ApplicationDbContext _context;
