@@ -8,6 +8,7 @@ namespace ECommercePlatform.Models
         [Key]
         public int Id { get; set; }
 
+        public int? EngineerId { get; set; }
         public Engineer? Engineer { get; set; } = null!;
 
         public DateTime ActionTime { get; set; }

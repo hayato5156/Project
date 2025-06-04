@@ -67,7 +67,7 @@ namespace ECommercePlatform.Data
             modelBuilder.Entity<OperationLog>()
                 .HasOne(o => o.Engineer)
                 .WithMany(e => e.OperationLogs)
-                .HasForeignKey(o => o.Id)
+                .HasForeignKey(o => o.EngineerId)
                 .OnDelete(DeleteBehavior.SetNull);
             // 執行 Seeding
             Seed(modelBuilder);
