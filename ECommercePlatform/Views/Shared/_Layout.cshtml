@@ -12,25 +12,37 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">ECommercePlatform</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">🛒Ez購,Ez Life</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
+                        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">🏠 首頁</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">🔑 登入/註冊</a>
                         </li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="project" asp-action="Index">留言板</a></li>
-    </ul>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-controller="Review" asp-action="Index">💬 商品評價</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="#" onclick="alert('尚未實作');">👤 會員中心</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="#" onclick="alert('尚未實作');">🛍️ 商品管理</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="#" onclick="alert('尚未實作');">📦 訂單管理</a>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </nav>
     </header>
+
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
@@ -42,51 +54,54 @@
             &copy; 2025 - ECommercePlatform - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
-<script>
-    const connection = new signalR.HubConnectionBuilder()
-        .withUrl("/hub/notify")
-        .build();
 
-    connection.on("ReceiveMessage", message => {
-        alert("📢 系統通知：" + message);
-    });
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/hub/notify")
+            .build();
 
-    connection.start().catch(err => console.error(err));
-</script>
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "YOUR_FIREBASE_API_KEY",
-    authDomain: "YOUR_FIREBASE_PROJECT.firebaseapp.com",
-    projectId: "YOUR_FIREBASE_PROJECT",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
-  };
+        connection.on("ReceiveMessage", message => {
+            alert("📢 系統通知：" + message);
+        });
 
-  firebase.initializeApp(firebaseConfig);
-  const messaging = firebase.messaging();
+        connection.start().catch(err => console.error(err));
+    </script>
 
-  messaging
-    .requestPermission()
-    .then(() => messaging.getToken())
-    .then(token => {
-      console.log("FCM Token:", token);
-      return fetch("/api/device/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token })
-      });
-    })
-    .catch(err => {
-      console.warn("推播權限被拒絕", err);
-    });
-</script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+          apiKey: "YOUR_FIREBASE_API_KEY",
+          authDomain: "YOUR_FIREBASE_PROJECT.firebaseapp.com",
+          projectId: "YOUR_FIREBASE_PROJECT",
+          messagingSenderId: "YOUR_SENDER_ID",
+          appId: "YOUR_APP_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const messaging = firebase.messaging();
+
+        messaging
+          .requestPermission()
+          .then(() => messaging.getToken())
+          .then(token => {
+            console.log("FCM Token:", token);
+            return fetch("/api/device/register", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ token })
+            });
+          })
+          .catch(err => {
+            console.warn("推播權限被拒絕", err);
+          });
+    </script>
 </body>
 </html>

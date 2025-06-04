@@ -1,63 +1,99 @@
-
 @{
-    ViewData["Title"] = "留言版";
+    ViewData["Title"] = "商品評價";
     var messages = ViewBag.messages as List<ECommercePlatform.Models.Messages>;
+    string selectedSort = Context.Request.Query["sort"];
+    string selectedScore = Context.Request.Query["scoreFilter"];
+    string keyword = Context.Request.Query["keyword"];
 }
 
-<h2>留言列表</h2>
-<p>
-    📝 留言總數：@ViewBag.totalMessages |
-    ⭐ 平均評分：@ViewBag.averageScore.ToString("0.0")
+<h2 class="mb-3">📋 商品評價列表</h2>
+
+<p class="text-muted">
+    📝 總留言數：<strong>@ViewBag.totalMessages</strong> |
+    ⭐ 平均評分：<strong>@ViewBag.averageScore.ToString("0.0")</strong>
 </p>
 
-<form method="get" asp-controller="project" asp-action="Index">
+<form method="get" asp-controller="Project" asp-action="Index" class="row g-3 mb-4">
     <input type="hidden" name="ID" value="@ViewBag.ID" />
     <input type="hidden" name="userName" value="@ViewBag.name" />
     <input type="hidden" name="buyOrSell" value="@ViewBag.identity" />
 
-    <label>排序方式：</label>
-    <select name="sort">
-        <option value="latest">最新留言</option>
-        <option value="oldest">最舊留言</option>
-        <option value="highscore">評分最高</option>
-        <option value="lowscore">評分最低</option>
-    </select>
+    <div class="col-md-3">
+        <label class="form-label">排序方式</label>
+        <select name="sort" class="form-select">
+            <option value="latest" selected="@(selectedSort == "latest")">最新</option>
+            <option value="oldest" selected="@(selectedSort == "oldest")">最舊</option>
+            <option value="highscore" selected="@(selectedSort == "highscore")">評分高→低</option>
+            <option value="lowscore" selected="@(selectedSort == "lowscore")">評分低→高</option>
+        </select>
+    </div>
 
-    <label>關鍵字搜尋：</label>
-    <input type="text" name="keyword" placeholder="輸入關鍵字" />
+    <div class="col-md-3">
+        <label class="form-label">評分過濾</label>
+        <select name="scoreFilter" class="form-select">
+            <option value="">--全部--</option>
+            @for (int i = 5; i >= 1; i--)
+            {
+                <option value="@i" selected="@(selectedScore == i.ToString())">@i 星</option>
+            }
+        </select>
+    </div>
 
-    <label>評分過濾：</label>
-    <select name="scoreFilter">
-        <option value="">--全部--</option>
-        <option value="5">5 星</option>
-        <option value="4">4 星</option>
-        <option value="3">3 星</option>
-        <option value="2">2 星</option>
-        <option value="1">1 星</option>
-    </select>
+    <div class="col-md-4">
+        <label class="form-label">關鍵字搜尋</label>
+        <input type="text" name="keyword" class="form-control" placeholder="請輸入留言內容" value="@keyword" />
+    </div>
 
-    <button type="submit">篩選</button>
+    <div class="col-md-2 align-self-end">
+        <button type="submit" class="btn btn-primary w-100">🔍 篩選</button>
+    </div>
 </form>
 
-<div id="messageResult">
-<div class="row">
-    @foreach (var m in messages)
+<div id="messageResult" class="row">
+    @if (messages != null && messages.Any())
     {
-        <div class="col-md-6 mb-3">
-            <div class="card shadow-sm border-primary">
-                <div class="card-header bg-primary text-white">
-                    <strong>@m.userName</strong> - 評分：@m.score
-                </div>
-                <div class="card-body">
-                    <p class="card-text">@m.main</p>
-                </div>
-                <div class="card-footer text-muted">
-                    @m.date.ToString("yyyy-MM-dd HH:mm")
+        foreach (var m in messages)
+        {
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-light">
+                        <strong>@m.userName</strong>
+                        <span class="text-warning float-end">
+                            @{
+                                for (int s = 1; s <= 5; s++)
+                                {
+                                    if (s <= m.score)
+                                    {
+                                        <text>★</text>
+                                        ;
+                                    }
+                                    else
+                                    {
+                                        <text>☆</text>
+                                        ;
+                                    }
+                                }
+                            }
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <p>@m.main</p>
+                        @if (m.imageData != null)
+                        {
+                            <img src="data:image/png;base64,@Convert.ToBase64String(m.imageData)" class="img-fluid rounded" alt="留言圖片" />
+                        }
+                    </div>
+                    <div class="card-footer small text-muted">
+                        評價時間：@m.date.ToString("yyyy-MM-dd HH:mm")
+                    </div>
                 </div>
             </div>
+        }
+    }
+    else
+    {
+        <div class="col-12">
+            <p class="text-center text-muted">目前沒有合適的留言。</p>
         </div>
     }
 </div>
-</div>
-
-<script src="/js/messages-filter.js"></script>

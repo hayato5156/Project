@@ -3,12 +3,20 @@
   "WorkspaceRootPath": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|c:\\users\\hayato5156\\documents\\github\\project\\ecommerceplatform\\models\\dbmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:models\\dbmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|c:\\users\\hayato5156\\documents\\github\\project\\ecommerceplatform\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|c:\\users\\hayato5156\\documents\\github\\project\\ecommerceplatform\\ecommerceplatform.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:ecommerceplatform.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|c:\\users\\hayato5156\\documents\\github\\project\\ecommerceplatform\\views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|c:\\users\\hayato5156\\documents\\github\\project\\ecommerceplatform\\views\\reviews\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:views\\reviews\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|c:\\users\\hayato5156\\documents\\github\\project\\ecommerceplatform\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -18,7 +26,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -26,28 +34,54 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "DBmanager.cs",
-              "DocumentMoniker": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Models\\DBmanager.cs",
-              "RelativeDocumentMoniker": "Models\\DBmanager.cs",
-              "ToolTip": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Models\\DBmanager.cs",
-              "RelativeToolTip": "Models\\DBmanager.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAASAAAAAAAAAA==",
+              "DocumentIndex": 3,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAACIAAAAAAAAAAAAowCYAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-04T12:56:48.66Z",
+              "WhenOpened": "2025-06-04T19:12:33.074Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "ECommercePlatform",
-              "DocumentMoniker": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\ECommercePlatform.csproj",
-              "RelativeDocumentMoniker": "ECommercePlatform.csproj",
-              "ToolTip": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\ECommercePlatform.csproj",
-              "RelativeToolTip": "ECommercePlatform.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAA5AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-06-04T12:46:32.431Z",
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Views\\Home\\Index.cshtml",
+              "RelativeDocumentMoniker": "Views\\Home\\Index.cshtml",
+              "ToolTip": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Views\\Home\\Index.cshtml",
+              "RelativeToolTip": "Views\\Home\\Index.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-04T19:05:45.183Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "_Layout.cshtml",
+              "DocumentMoniker": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Views\\Shared\\_Layout.cshtml",
+              "RelativeDocumentMoniker": "Views\\Shared\\_Layout.cshtml",
+              "ToolTip": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Views\\Shared\\_Layout.cshtml",
+              "RelativeToolTip": "Views\\Shared\\_Layout.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAA9AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-04T18:56:20.551Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Views\\Reviews\\Index.cshtml",
+              "RelativeDocumentMoniker": "Views\\Reviews\\Index.cshtml",
+              "ToolTip": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Views\\Reviews\\Index.cshtml",
+              "RelativeToolTip": "Views\\Reviews\\Index.cshtml",
+              "ViewState": "AgIAAIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-04T19:03:40.64Z",
               "EditorCaption": ""
             }
           ]

@@ -29,6 +29,8 @@ builder.Services.AddAuthentication()
         options.ExpireTimeSpan = TimeSpan.FromHours(1);
     });
 
+builder.Services.AddScoped<EmailService>();
+
 builder.Services.AddAuthorization();
 
 // 支援 Operation Log 與 HttpContext
@@ -36,6 +38,17 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<OperationLogService>();
 
 var app = builder.Build();
+
+// 添加這個重要的設定 - 顯示詳細錯誤訊息
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
 
 app.UseStaticFiles();
 

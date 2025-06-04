@@ -7,18 +7,18 @@ namespace ECommercePlatform.Models
     {
         [Key]
         public int Id { get; set; }
+        public int? EngineerId { get; set; }
+        public Engineer? Engineer { get; set; }
 
-        public Engineer? Engineer { get; set; } = null!;
-
-        public DateTime ActionTime { get; set; }
-
-        public string Controller { get; set; } = null!;
-
-        public string Action { get; set; } = null!;
+        public DateTime ActionTime { get; set; } = DateTime.UtcNow;
+        [Required]
+        public string Controller { get; set; } = string.Empty;
+        [Required]
+        public string Action { get; set; } = string.Empty;
 
         public string? TargetId { get; set; }
 
         public string? Description { get; set; }
-        public DateTime Timestamp { get; internal set; }
+        public DateTime Timestamp { get; internal set; } = DateTime.UtcNow;
     }
 }

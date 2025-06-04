@@ -6,6 +6,7 @@ using ECommercePlatform.Data;
 
 namespace ECommercePlatform.Controllers.Admin
 {
+    [Route("admin/logs")]
     public class LogsController : Controller
     {
         private readonly ApplicationDbContext _dbContext;

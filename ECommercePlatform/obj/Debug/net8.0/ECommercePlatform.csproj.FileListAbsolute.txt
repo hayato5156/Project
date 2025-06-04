@@ -179,10 +179,10 @@ C:\Users\hayato5156\Documents\GitHub\Project\ECommercePlatform\obj\Debug\net8.0\
 C:\Users\hayato5156\Documents\GitHub\Project\ECommercePlatform\obj\Debug\net8.0\staticwebassets\msbuild.buildMultiTargeting.ECommercePlatform.props
 C:\Users\hayato5156\Documents\GitHub\Project\ECommercePlatform\obj\Debug\net8.0\staticwebassets\msbuild.buildTransitive.ECommercePlatform.props
 C:\Users\hayato5156\Documents\GitHub\Project\ECommercePlatform\obj\Debug\net8.0\staticwebassets.pack.json
-C:\Users\hayato5156\Documents\GitHub\Project\ECommercePlatform\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 C:\Users\hayato5156\Documents\GitHub\Project\ECommercePlatform\obj\Debug\net8.0\ECommerc.8B9E5424.Up2Date
 C:\Users\hayato5156\Documents\GitHub\Project\ECommercePlatform\obj\Debug\net8.0\ECommercePlatform.dll
 C:\Users\hayato5156\Documents\GitHub\Project\ECommercePlatform\obj\Debug\net8.0\refint\ECommercePlatform.dll
 C:\Users\hayato5156\Documents\GitHub\Project\ECommercePlatform\obj\Debug\net8.0\ECommercePlatform.pdb
 C:\Users\hayato5156\Documents\GitHub\Project\ECommercePlatform\obj\Debug\net8.0\ECommercePlatform.genruntimeconfig.cache
 C:\Users\hayato5156\Documents\GitHub\Project\ECommercePlatform\obj\Debug\net8.0\ref\ECommercePlatform.dll
+C:\Users\hayato5156\Documents\GitHub\Project\ECommercePlatform\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt

@@ -21,17 +21,17 @@ namespace ECommercePlatform.Models
         public int replyID { get; set; } = 0;
         public int userID { get; set; }
         public int productID { get; set; }
-        public string userName { get; set; } = "0202";
-        public string main { get; set; }
+        public string userName { get; set; } = string.Empty;
+        public string main { get; set; } = string.Empty;
         public DateTime date { get; set; } = DateTime.Now;
         public int score { get; set; }
         public byte[]? imageData { get; set; } = null;
     }
-    public class account
-    {
-        public int ID { get; set; }
-        public string userName { get; set; } = "visitor";
-        public string Password { get; set; }
-        public string buyOrSell { get; set; } = "visitor";
-    }
+    //public class account
+    //{
+    //    public int ID { get; set; }
+    //    public string userName { get; set; } = "visitor";
+    //    public string Password { get; set; }
+    //    public string buyOrSell { get; set; } = "visitor";
+    //}
 }

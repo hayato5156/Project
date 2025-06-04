@@ -7,6 +7,23 @@
     <RootNamespace>ECommercePlatform</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Views\Engineer\**" />
+    <Compile Remove="Views\Products\**" />
+    <Content Remove="Views\Engineer\**" />
+    <Content Remove="Views\Products\**" />
+    <EmbeddedResource Remove="Views\Engineer\**" />
+    <EmbeddedResource Remove="Views\Products\**" />
+    <None Remove="Views\Engineer\**" />
+    <None Remove="Views\Products\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Controllers\ProjectController%28drop%29 - 複製.cs" />
+    <Compile Remove="Controllers\ProjectController%28drop%29.cs" />
+    <Compile Remove="Controllers\UsersController.cs" />
+  </ItemGroup>
+
  <ItemGroup>
   <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
   <PackageReference Include="ClosedXML" Version="0.104.2" />
@@ -25,10 +42,5 @@
   <PackageReference Include="MimeKit" Version="4.12.0" />
   <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
 </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Views\Engineer\" />
-    <Folder Include="Views\Products\" />
-  </ItemGroup>
 
 </Project>

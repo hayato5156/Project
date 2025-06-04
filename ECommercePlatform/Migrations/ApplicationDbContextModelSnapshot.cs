@@ -17,7 +17,7 @@ namespace ECommercePlatform.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.4")
+                .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -36,6 +36,9 @@ namespace ECommercePlatform.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ProductId1")
+                        .HasColumnType("int");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
@@ -46,7 +49,10 @@ namespace ECommercePlatform.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("ProductId1");
+
+                    b.HasIndex("UserId", "ProductId")
+                        .IsUnique();
 
                     b.ToTable("CartItems");
                 });
@@ -60,16 +66,21 @@ namespace ECommercePlatform.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<string>("Token")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int?>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
 
                     b.ToTable("DeviceTokens");
                 });
@@ -84,7 +95,7 @@ namespace ECommercePlatform.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -92,9 +103,15 @@ namespace ECommercePlatform.Migrations
 
                     b.Property<string>("Username")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("Username")
+                        .IsUnique();
 
                     b.ToTable("Engineers");
                 });
@@ -102,29 +119,52 @@ namespace ECommercePlatform.Migrations
             modelBuilder.Entity("ECommercePlatform.Models.OperationLog", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Action")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("ActionTime")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<string>("Controller")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("EngineerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("EngineerId1")
+                        .HasColumnType("int");
 
                     b.Property<string>("TargetId")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ActionTime");
+
+                    b.HasIndex("Controller");
+
+                    b.HasIndex("EngineerId");
+
+                    b.HasIndex("EngineerId1");
+
+                    b.HasIndex("Timestamp");
 
                     b.ToTable("OperationLogs");
                 });
@@ -138,7 +178,9 @@ namespace ECommercePlatform.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("OrderDate")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<string>("OrderStatus")
                         .HasColumnType("nvarchar(max)");
@@ -182,6 +224,9 @@ namespace ECommercePlatform.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ProductId1")
+                        .HasColumnType("int");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
@@ -193,6 +238,8 @@ namespace ECommercePlatform.Migrations
                     b.HasIndex("OrderId");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("ProductId1");
 
                     b.ToTable("OrderItems");
                 });
@@ -234,33 +281,11 @@ namespace ECommercePlatform.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18, 2)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
                     b.ToTable("Products");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "High performance laptop",
-                            ImageUrl = "laptop.jpg",
-                            IsActive = false,
-                            Name = "Laptop",
-                            Price = 1500.00m
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Latest model smartphone",
-                            ImageUrl = "smartphone.jpg",
-                            IsActive = false,
-                            Name = "Smartphone",
-                            Price = 799.99m
-                        });
                 });
 
             modelBuilder.Entity("ECommercePlatform.Models.Review", b =>
@@ -272,28 +297,126 @@ namespace ECommercePlatform.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Content")
+                        .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<byte[]>("ImageData")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<bool>("IsVisible")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProductId1")
                         .HasColumnType("int");
 
                     b.Property<int>("Rating")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ReplyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
+                    b.Property<string>("UserName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("IsVisible");
 
                     b.HasIndex("ProductId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("ProductId1");
 
-                    b.ToTable("Reviews");
+                    b.HasIndex("Rating");
+
+                    b.HasIndex("ReplyId");
+
+                    b.HasIndex("UserId", "ProductId");
+
+                    b.ToTable("Reviews", (string)null);
+                });
+
+            modelBuilder.Entity("ECommercePlatform.Models.ReviewReport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminResponse")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("Harassment")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Hatred")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsProcessed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("Pornography")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("ReporterId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ReviewId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Threaten")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("IsProcessed");
+
+                    b.HasIndex("ReporterId");
+
+                    b.HasIndex("ReviewId");
+
+                    b.ToTable("ReviewReports", (string)null);
                 });
 
             modelBuilder.Entity("ECommercePlatform.Models.User", b =>
@@ -308,7 +431,9 @@ namespace ECommercePlatform.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -318,7 +443,12 @@ namespace ECommercePlatform.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("LastName")
                         .HasColumnType("nvarchar(max)");
@@ -327,8 +457,21 @@ namespace ECommercePlatform.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("PasswordResetExpires")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PasswordResetToken")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("User");
 
                     b.Property<string>("Username")
                         .IsRequired()
@@ -343,41 +486,19 @@ namespace ECommercePlatform.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Address = "Default Address",
-                            CreatedAt = new DateTime(2025, 6, 3, 7, 32, 31, 967, DateTimeKind.Utc).AddTicks(8557),
-                            Email = "admin@example.com",
-                            FirstName = "Admin",
-                            IsActive = false,
-                            LastName = "User",
-                            PasswordHash = "admin123",
-                            Username = "admin"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Address = "Default Address",
-                            CreatedAt = new DateTime(2025, 6, 3, 7, 32, 31, 967, DateTimeKind.Utc).AddTicks(9438),
-                            Email = "john@example.com",
-                            FirstName = "John",
-                            IsActive = false,
-                            LastName = "Doe",
-                            PasswordHash = "password",
-                            Username = "john_doe"
-                        });
                 });
 
             modelBuilder.Entity("ECommercePlatform.Models.CartItem", b =>
                 {
                     b.HasOne("ECommercePlatform.Models.Product", "Product")
-                        .WithMany("CartItems")
+                        .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("ECommercePlatform.Models.Product", null)
+                        .WithMany("CartItems")
+                        .HasForeignKey("ProductId1");
 
                     b.HasOne("ECommercePlatform.Models.User", "User")
                         .WithMany("CartItems")
@@ -393,10 +514,13 @@ namespace ECommercePlatform.Migrations
             modelBuilder.Entity("ECommercePlatform.Models.OperationLog", b =>
                 {
                     b.HasOne("ECommercePlatform.Models.Engineer", "Engineer")
+                        .WithMany()
+                        .HasForeignKey("EngineerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ECommercePlatform.Models.Engineer", null)
                         .WithMany("OperationLogs")
-                        .HasForeignKey("Id")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .IsRequired();
+                        .HasForeignKey("EngineerId1");
 
                     b.Navigation("Engineer");
                 });
@@ -421,10 +545,14 @@ namespace ECommercePlatform.Migrations
                         .IsRequired();
 
                     b.HasOne("ECommercePlatform.Models.Product", "Product")
-                        .WithMany("OrderItems")
+                        .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("ECommercePlatform.Models.Product", null)
+                        .WithMany("OrderItems")
+                        .HasForeignKey("ProductId1");
 
                     b.Navigation("Order");
 
@@ -434,10 +562,19 @@ namespace ECommercePlatform.Migrations
             modelBuilder.Entity("ECommercePlatform.Models.Review", b =>
                 {
                     b.HasOne("ECommercePlatform.Models.Product", "Product")
-                        .WithMany("Reviews")
+                        .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("ECommercePlatform.Models.Product", null)
+                        .WithMany("Reviews")
+                        .HasForeignKey("ProductId1");
+
+                    b.HasOne("ECommercePlatform.Models.Review", "ReplyTo")
+                        .WithMany("Replies")
+                        .HasForeignKey("ReplyId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("ECommercePlatform.Models.User", "User")
                         .WithMany("Reviews")
@@ -447,7 +584,28 @@ namespace ECommercePlatform.Migrations
 
                     b.Navigation("Product");
 
+                    b.Navigation("ReplyTo");
+
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ECommercePlatform.Models.ReviewReport", b =>
+                {
+                    b.HasOne("ECommercePlatform.Models.User", "Reporter")
+                        .WithMany()
+                        .HasForeignKey("ReporterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ECommercePlatform.Models.Review", "Review")
+                        .WithMany("Reports")
+                        .HasForeignKey("ReviewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Reporter");
+
+                    b.Navigation("Review");
                 });
 
             modelBuilder.Entity("ECommercePlatform.Models.Engineer", b =>
@@ -467,6 +625,13 @@ namespace ECommercePlatform.Migrations
                     b.Navigation("OrderItems");
 
                     b.Navigation("Reviews");
+                });
+
+            modelBuilder.Entity("ECommercePlatform.Models.Review", b =>
+                {
+                    b.Navigation("Replies");
+
+                    b.Navigation("Reports");
                 });
 
             modelBuilder.Entity("ECommercePlatform.Models.User", b =>

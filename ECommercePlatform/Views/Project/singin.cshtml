@@ -1,0 +1,22 @@
+﻿@{
+    ViewData["Title"] = "登入";
+}
+
+<h2 class="mb-4">🔐 使用者登入</h2>
+
+@if (ViewBag.Message != null)
+{
+    <div class="alert alert-danger">@ViewBag.Message</div>
+}
+
+<form method="post" asp-controller="Project" asp-action="SingIn" class="w-50 mx-auto">
+    <div class="mb-3">
+        <label class="form-label">帳號：</label>
+        <input type="text" name="username" class="form-control" placeholder="請輸入帳號" required />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">密碼：</label>
+        <input type="password" name="password" class="form-control" placeholder="請輸入密碼" required />
+    </div>
+    <button type="submit" class="btn btn-primary">登入</button>
+</form>

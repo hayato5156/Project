@@ -7,7 +7,7 @@ using ECommercePlatform.Models.ViewModels;
 
 namespace ECommercePlatform.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = "EngineerCookie")]
     [Route("admin/users")]
     public class AdminUsersController : Controller
     {

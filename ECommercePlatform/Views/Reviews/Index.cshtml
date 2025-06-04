@@ -1,31 +1,160 @@
-@model IEnumerable<ECommercePlatform.Models.Review>
+@model IEnumerable<ECommercePlatform.Models.Messages>
 
-<h2>商品評價管理</h2>
+@{
+    ViewData["Title"] = "商品評價";
+}
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>時間</th>
-            <th>商品</th>
-            <th>會員</th>
-            <th>星等</th>
-            <th>內容</th>
-            <th>操作</th>
-        </tr>
-    </thead>
-    <tbody>
-    @foreach (var review in Model)
-    {
-        <tr>
-            <td>@review.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
-            <td>@review.Product.Name</td>
-            <td>@review.User.Username</td>
-            <td>@review.Rating</td>
-            <td>@review.Content</td>
-            <td>
-                <a class="btn btn-sm btn-danger" href="/admin/reviews/delete/@review.Id" onclick="return confirm('確定刪除這筆評價嗎？')">刪除</a>
-            </td>
-        </tr>
-    }
-    </tbody>
-</table>
+<div class="container">
+    <h2 class="mb-4">📋 商品評價列表</h2>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <p class="text-muted">
+                📝 總留言數：<strong>@ViewBag.totalMessages</strong> |
+                ⭐ 平均評分：<strong>@(ViewBag.averageScore?.ToString("0.0") ?? "0.0")</strong>
+            </p>
+        </div>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <div class="col-md-6 text-end">
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addReviewModal">
+                    ✍️ 新增評價
+                </button>
+            </div>
+        }
+    </div>
+
+    <!-- 評價列表 -->
+    <div class="row" id="messageResult">
+        @if (Model != null && Model.Any())
+        {
+            foreach (var m in Model)
+            {
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <strong>@m.userName</strong>
+                            <div>
+                                <span class="text-warning">
+                                    @for (int s = 1; s <= 5; s++)
+                                    {
+                                        if (s <= m.score)
+                                        {
+                                            <text>★</text>
+                                        }
+                                        else
+                                        {
+                                            <text>☆</text>
+                                        }
+                                    }
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p>@m.main</p>
+                            @if (m.imageData != null)
+                            {
+                                <img src="data:image/png;base64,@Convert.ToBase64String(m.imageData)"
+                                     class="img-fluid rounded" alt="留言圖片" style="max-height: 200px;" />
+                            }
+                        </div>
+                        <div class="card-footer small text-muted">
+                            <span>評價時間：@m.date.ToString("yyyy-MM-dd HH:mm")</span>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="alert alert-info text-center">
+                    <h5>📭 目前沒有評價</h5>
+                    <p>成為第一個評價的人吧！</p>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addReviewModal">
+                            立即評價
+                        </button>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" class="btn btn-primary">登入後評價</a>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- 新增評價模態框 -->
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <div class="modal fade" id="addReviewModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">新增評價</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="addReviewForm" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">評分：</label>
+                            <select name="score" class="form-select" required>
+                                <option value="">請選擇評分</option>
+                                <option value="5">⭐⭐⭐⭐⭐ 非常滿意</option>
+                                <option value="4">⭐⭐⭐⭐☆ 滿意</option>
+                                <option value="3">⭐⭐⭐☆☆ 普通</option>
+                                <option value="2">⭐⭐☆☆☆ 不滿意</option>
+                                <option value="1">⭐☆☆☆☆ 非常不滿意</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">評價內容：</label>
+                            <textarea name="main" class="form-control" rows="4" placeholder="請描述您的使用體驗..." required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">上傳圖片（可選）：</label>
+                            <input type="file" name="image" class="form-control" accept="image/*" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-success">提交評價</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // 新增評價
+        $('#addReviewForm').submit(function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            formData.append('userID', '@User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value');
+            formData.append('userName', '@User.Identity.Name');
+            formData.append('productID', 1); // 測試用
+            formData.append('replyID', 0);
+
+            $.ajax({
+                url: '@Url.Action("SubmitMessage", "Review")',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(result) {
+                    $('#addReviewModal').modal('hide');
+                    location.reload();
+                },
+                error: function() {
+                    alert('提交失敗，請稍後重試');
+                }
+            });
+        });
+    </script>
+}

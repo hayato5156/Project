@@ -1,59 +1,76 @@
 @{
-    ViewData["Title"] = "後台統計圖表";
+    ViewData["Title"] = "管理後台";
 }
 
-<h2>後台儀表板</h2>
+<div class="container-fluid">
+    <h1>🛠️ 管理後台儀表板</h1>
 
-<canvas id="ordersChart" width="600" height="300"></canvas>
-<canvas id="revenueChart" width="600" height="300" class="mt-5"></canvas>
-<canvas id="statusChart" width="600" height="300" class="mt-5"></canvas>
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5>👥 總用戶數</h5>
+                    <h2>@ViewBag.TotalUsers</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5>📦 總訂單數</h5>
+                    <h2>@ViewBag.TotalOrders</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5>🛍️ 總商品數</h5>
+                    <h2>@ViewBag.TotalProducts</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5>⚙️ 系統狀態</h5>
+                    <h2>正常</h2>
+                </div>
+            </div>
+        </div>
+    </div>
 
-@section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        async function loadCharts() {
-            const res = await fetch('/api/admin/dashboard/charts');
-            const data = await res.json();
-
-            const ordersChart = new Chart(document.getElementById('ordersChart'), {
-                type: 'line',
-                data: {
-                    labels: data.dailyOrderCounts.map(d => d.date),
-                    datasets: [{
-                        label: '每日訂單數',
-                        data: data.dailyOrderCounts.map(d => d.count),
-                        borderWidth: 2,
-                        fill: false,
-                        borderColor: 'blue'
-                    }]
-                }
-            });
-
-            const revenueChart = new Chart(document.getElementById('revenueChart'), {
-                type: 'bar',
-                data: {
-                    labels: data.dailyRevenue.map(d => d.date),
-                    datasets: [{
-                        label: '每日營收',
-                        data: data.dailyRevenue.map(d => d.amount),
-                        backgroundColor: 'green'
-                    }]
-                }
-            });
-
-            const statusChart = new Chart(document.getElementById('statusChart'), {
-                type: 'pie',
-                data: {
-                    labels: data.statusDistribution.map(d => d.status),
-                    datasets: [{
-                        label: '訂單狀態分布',
-                        data: data.statusDistribution.map(d => d.count),
-                        backgroundColor: ['red', 'orange', 'blue', 'gray']
-                    }]
-                }
-            });
-        }
-
-        loadCharts();
-    </script>
-}
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>🔗 快速連結</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <a href="/admin/orders" class="btn btn-outline-primary btn-block mb-2">📋 訂單管理</a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="/admin/users" class="btn btn-outline-success btn-block mb-2">👥 用戶管理</a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="/admin/reviews" class="btn btn-outline-info btn-block mb-2">💬 評價管理</a>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <a href="/admin/logs" class="btn btn-outline-secondary btn-block mb-2">📊 操作日誌</a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="/admin/push" class="btn btn-outline-warning btn-block mb-2">🔔 推播通知</a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="/Engineer/Logout" class="btn btn-outline-danger btn-block mb-2">🚪 登出</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

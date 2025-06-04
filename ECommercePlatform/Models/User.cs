@@ -19,6 +19,7 @@ namespace ECommercePlatform.Models
         [Required(ErrorMessage = "密碼是必填的。")]
         [DataType(DataType.Password)]
         public string PasswordHash { get; set; } = null!;
+        //public string? Role { get; set; }
         public string? Address { get; set; }
         public string? PhoneNumber { get; set; }
         public string? FirstName { get; set; }
@@ -28,6 +29,17 @@ namespace ECommercePlatform.Models
 
         public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
         public ICollection<Order> Orders { get; set; } = new List<Order>();
-        public ICollection<Review> Reviews { get; set; } = new List<Review>();
+        //public ICollection<Review> Reviews { get; set; } = new List<Review>();
+        [StringLength(20)]
+        public string Role { get; set; } = "User";
+
+        public DateTime? LastLoginAt { get; set; }
+
+        // 密碼重設相關
+        public string? PasswordResetToken { get; set; }
+        public DateTime? PasswordResetExpires { get; set; }
+
+        // 導航屬性
+        public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
     }
 }
