@@ -18,7 +18,6 @@ using System.Text;
         public class OrdersExportController : ControllerBase
         {
             private readonly ApplicationDbContext _context;
-            private object htmlBuilder;
 
         public OrdersExportController(ApplicationDbContext context)
             {
@@ -27,7 +26,6 @@ using System.Text;
             [HttpGet]
             public IActionResult Export([FromQuery] string format = "excel")
             {
-            using var htmlStream = new MemoryStream(Encoding.UTF8.GetBytes(htmlBuilder.ToString()));
             using var pdfStream = new MemoryStream();
             using var workbook = new XLWorkbook();
             using var stream = new MemoryStream();
@@ -59,6 +57,8 @@ using System.Text;
                             htmlBuilder.AppendLine($"<tr><td>{order.Id}</td><td>{order.UserName}</td><td>{order.TotalAmount:C}</td><td>{order.OrderStatus}</td><td>{order.OrderDate:yyyy-MM-dd HH:mm}</td></tr>");
                         }
                         htmlBuilder.AppendLine("</table></body></html>");
+
+                        using var htmlStream = new MemoryStream(Encoding.UTF8.GetBytes(htmlBuilder.ToString()));
                         HtmlConverter.ConvertToPdf(htmlStream, pdfStream);
                         pdfStream.Position = 0;
                         return File(pdfStream.ToArray(), "application/pdf", "orders.pdf");
