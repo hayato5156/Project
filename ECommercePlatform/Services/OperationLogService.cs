@@ -23,6 +23,7 @@ namespace ECommercePlatform.Services
             {
                 Engineer = engineer, // 這裡是物件，而非 string
                 ActionTime = DateTime.UtcNow,
+                Timestamp = DateTime.UtcNow,
                 Controller = controller,
                 Action = action,
                 TargetId = targetId,
