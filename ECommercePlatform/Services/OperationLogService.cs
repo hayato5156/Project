@@ -17,12 +17,12 @@ namespace ECommercePlatform.Services
         {
             var username = _http.HttpContext?.User?.Identity?.Name;
 
-            // ¨Ì¾Úµn¤J¦WºÙ§ä¥X¹ïÀ³ªº Engineer ¹êÅé
+}
             var engineer = _context.Engineers.FirstOrDefault(e => e.Username == username);
 
             var log = new OperationLog
             {
-                Engineer = engineer, // ³o¸Ì¬Oª«¥ó¡A¦Ó«Dstring
+                Engineer = engineer, // é€™è£¡æ˜¯ç‰©ä»¶ï¼Œè€Œéstring
                 ActionTime = DateTime.UtcNow,
                 Controller = controller,
                 Action = action,

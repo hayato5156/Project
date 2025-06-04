@@ -5,18 +5,18 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace ECommercePlatform.Controllers
 {
-    // ¤é»x±±¨î¾¹
-    public class LogsControllerV2 : Controller // ¤w§ó¦W¥HÁ×§K­«½Æ©w¸q
+}
+    public class LogsControllerV2 : Controller // å·²æ›´åä»¥é¿å…é‡è¤‡å®šç¾©
     {
         private readonly ApplicationDbContext _context;
 
-        // «Øºc¤l¡Aª`¤J¸ê®Æ®w¤º®e
+        // å»ºæ§‹å­ï¼Œæ³¨å…¥è³‡æ–™åº«å…§å®¹
         public LogsControllerV2(ApplicationDbContext context)
         {
             _context = context;
         }
 
-        // ¨ú±o³Ìªñ 20 µ§¾Ş§@¤é»x
+        // å–å¾—æœ€è¿‘ 20 ç­†æ“ä½œæ—¥èªŒ
         [HttpGet("recent")]
         public IActionResult GetRecentLogs()
         {

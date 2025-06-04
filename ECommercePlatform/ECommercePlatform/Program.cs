@@ -4,15 +4,15 @@ using ECommercePlatform.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ¸ê®Æ®w³s½u³]©w
+// è³‡æ–™åº«é€£ç·šè¨­å®š
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// MVC »P SignalR
+// MVC èˆ‡ SignalR
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
 
-// ¥¿½Tµù¥U Cookie Schemes¡]¥uµù¥U¤@¦¸¨C­Ó¦WºÙ¡^
+// æ­£ç¢ºè¨»å†Š Cookie Schemesï¼ˆåªè¨»å†Šä¸€æ¬¡æ¯å€‹åç¨±ï¼‰
 builder.Services.AddAuthentication()
     .AddCookie("EngineerCookie", options =>
     {
@@ -32,7 +32,7 @@ builder.Services.AddAuthentication()
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 
-// ¤ä´© Operation Log »P HttpContext
+// æ”¯æ´ Operation Log èˆ‡ HttpContext
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<OperationLogService>();
 
@@ -40,7 +40,7 @@ var app = builder.Build();
 
 app.UseStaticFiles();
 
-// ´ú¸Õ¿é¥X Featured Products
+app.Run();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -53,7 +53,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// ¹w³]¸ô¥Ñ
+// é è¨­è·¯ç”±
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
