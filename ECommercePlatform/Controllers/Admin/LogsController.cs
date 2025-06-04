@@ -4,11 +4,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using ECommercePlatform.Data;
 
-namespace ECommercePlatform.Controllers
+namespace ECommercePlatform.Controllers.Admin
 {
     public class LogsController : Controller
     {
-}
         private readonly ApplicationDbContext _dbContext;
 
         // 建構子，將 ApplicationDbContext 注入
