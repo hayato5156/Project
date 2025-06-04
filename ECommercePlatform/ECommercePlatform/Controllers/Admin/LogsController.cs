@@ -8,16 +8,16 @@ namespace ECommercePlatform.Controllers
 {
     public class LogsController : Controller
     {
-        // ª`¤J¸ê®Æ®w¤º®eª«¥ó
+}
         private readonly ApplicationDbContext _dbContext;
 
-        // «Øºc¤l¡A±N ApplicationDbContext ª`¤J
+        // å»ºæ§‹å­ï¼Œå°‡ ApplicationDbContext æ³¨å…¥
         public LogsController(ApplicationDbContext dbContext)
         {
             _dbContext = dbContext;
         }
 
-        // ¨ú±o³Ìªñ 200 µ§¾Ş§@¬ö¿ı
+        // å–å¾—æœ€è¿‘ 200 ç­†æ“ä½œç´€éŒ„
         [HttpGet("")]
         public async Task<IActionResult> Index()
         {
