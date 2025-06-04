@@ -1,16 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
-using ECommercePlatform.Models;
 using ECommercePlatform.Data;
-using Microsoft.AspNetCore.Authorization;
 
-namespace ECommercePlatform.Controllers
+namespace ECommercePlatform.Controllers.Api
 {
-    public class LogsControllerV2 : Controller // 已更名以避免重複定義
+    [ApiController]
+    [Route("api/logs")]
+    public class LogsApiController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
 
-        // 建構子，注入資料庫內容
-        public LogsControllerV2(ApplicationDbContext context)
+        // 建構子注入資料庫內容
+        public LogsApiController(ApplicationDbContext context)
         {
             _context = context;
         }
