@@ -12,7 +12,7 @@ namespace ECommercePlatform.Models
 {
     public class DBmanager
     {
-        private readonly string connStr = "Data Source=(localdb)\\MSSQLLocalDB;Database=test;User ID=shadow;Password=shadow9487;Trusted_Connection=True";
+        private readonly string connStr = "Data Source=(localdb)\\MSSQLLocalDB;Database=ECommercePlatform;Trusted_Connection=True";
         //取得留言、回覆↓
         public List<Messages> getMessages()
         {
