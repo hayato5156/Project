@@ -30,7 +30,6 @@ builder.Services.AddAuthentication()
     });
 
 builder.Services.AddAuthorization();
-builder.Services.AddControllers();
 
 // 支援 Operation Log 與 HttpContext
 builder.Services.AddHttpContextAccessor();
@@ -40,15 +39,7 @@ var app = builder.Build();
 
 app.UseStaticFiles();
 
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    var featuredProducts = dbContext.Products.Take(3).ToList();
-    Console.WriteLine($"Featured Products Count: {featuredProducts.Count}");
-}
-
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
