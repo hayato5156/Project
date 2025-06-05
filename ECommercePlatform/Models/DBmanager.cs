@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Principal;
-using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using Microsoft.Data.SqlClient;
 
 namespace ECommercePlatform.Models
@@ -13,8 +10,8 @@ namespace ECommercePlatform.Models
         // 資料庫連線字串
         private readonly string connStr = "Data Source=(localdb)\\MSSQLLocalDB;Database=ECommercePlatform;Trusted_Connection=True";
 
-        //留言系統
-        //取得所有留言
+        // 留言系統
+        // 取得所有留言
         public List<Messages> GetMessages()
         {
             List<Messages> messages = new();
@@ -89,72 +86,6 @@ namespace ECommercePlatform.Models
             cmd.Parameters.AddWithValue("@id", messageID);
             conn.Open();
             cmd.ExecuteNonQuery();
-        }
-
-        //使用者系統
-        //新增使用者（註冊）
-        public void AddUser(User u)
-        {
-            using var conn = new SqlConnection(connStr);
-            var sql = @"INSERT INTO Users(Username, Email, PasswordHash, Role, CreatedAt, IsActive)
-                        VALUES(@Username, @Email, @PasswordHash, @Role, @CreatedAt, @IsActive)";
-            using var cmd = new SqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@Username", u.Username);
-            cmd.Parameters.AddWithValue("@Email", u.Email);
-            cmd.Parameters.AddWithValue("@PasswordHash", u.PasswordHash);
-            cmd.Parameters.AddWithValue("@Role", u.Role ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@CreatedAt", u.CreatedAt);
-            cmd.Parameters.AddWithValue("@IsActive", u.IsActive);
-            conn.Open();
-            cmd.ExecuteNonQuery();
-        }
-
-        // 取得所有使用者
-        public List<User> GetUsers()
-        {
-            var users = new List<User>();
-            using var conn = new SqlConnection(connStr);
-            var cmd = new SqlCommand("SELECT * FROM Users", conn);
-            conn.Open();
-            using var reader = cmd.ExecuteReader();
-            while (reader.Read())
-            {
-                users.Add(new User
-                {
-                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                    Username = reader.GetString(reader.GetOrdinal("Username")),
-                    Email = reader.GetString(reader.GetOrdinal("Email")),
-                    PasswordHash = reader.GetString(reader.GetOrdinal("PasswordHash")),
-                    Role = reader.IsDBNull(reader.GetOrdinal("Role")) ? null : reader.GetString(reader.GetOrdinal("Role")),
-                    CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
-                    IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive"))
-                });
-            }
-            return users;
-        }
-
-        // 使用者登入（比對帳號密碼）
-        public User? Login(string username, string passwordHash)
-        {
-            using var conn = new SqlConnection(connStr);
-            var cmd = new SqlCommand("SELECT * FROM Users WHERE Username=@u AND PasswordHash=@p", conn);
-            cmd.Parameters.AddWithValue("@u", username);
-            cmd.Parameters.AddWithValue("@p", passwordHash);
-            conn.Open();
-            using var reader = cmd.ExecuteReader();
-            if (reader.Read())
-            {
-                return new User
-                {
-                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                    Username = reader.GetString(reader.GetOrdinal("Username")),
-                    Email = reader.GetString(reader.GetOrdinal("Email")),
-                    Role = reader.IsDBNull(reader.GetOrdinal("Role")) ? null : reader.GetString(reader.GetOrdinal("Role")),
-                    CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
-                    IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive"))
-                };
-            }
-            return null;
         }
     }
 }

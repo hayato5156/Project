@@ -5,6 +5,8 @@ using System.Security.Claims;
 using ECommercePlatform.Data;
 using ECommercePlatform.Models;
 using ECommercePlatform.Services;
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace ECommercePlatform.Controllers
 {
@@ -21,39 +23,42 @@ namespace ECommercePlatform.Controllers
             _log = log;
         }
 
-        /// <summary>
-        /// 登入頁面 (保持與 ProjectController.SingIn 相容)
-        /// </summary>
+        /// 登入頁面
         [HttpGet]
         public IActionResult Login(string? returnUrl = null)
         {
             if (User.Identity?.IsAuthenticated == true)
             {
-                return RedirectToAction("Index", "Review");
+                return RedirectToAction("Index", "Home");
             }
             ViewBag.ReturnUrl = returnUrl;
             return View();
         }
 
-        /// <summary>
-        /// 處理登入 (完全相容 ProjectController 的登入邏輯)
-        /// </summary>
+        /// 處理登入
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string username, string password, string? returnUrl = null)
         {
             try
             {
-                // 使用與 ProjectController 相同的登入邏輯
-                var user = _context.Users.FirstOrDefault(u => u.Username == username && u.IsActive);
-
-                if (user == null)
+                if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
                 {
-                    ViewBag.Message = "登入失敗"; // 保持原有錯誤訊息格式
+                    ViewBag.Message = "請輸入帳號和密碼";
                     return View();
                 }
 
-                // 驗證密碼 (支援兩種格式：BCrypt 和原有格式)
+                // 查找用戶
+                var user = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Username == username && u.IsActive);
+
+                if (user == null)
+                {
+                    ViewBag.Message = "帳號不存在或已被停用";
+                    return View();
+                }
+
+                // 驗證密碼
                 bool passwordValid = false;
 
                 if (user.PasswordHash.StartsWith("$2"))
@@ -71,21 +76,23 @@ namespace ECommercePlatform.Controllers
                     {
                         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
                         await _context.SaveChangesAsync();
+                        _log.Log("Account", "PasswordUpgrade", user.Id.ToString(), "密碼格式升級為 BCrypt");
                     }
                 }
 
                 if (!passwordValid)
                 {
-                    ViewBag.Message = "登入失敗";
+                    ViewBag.Message = "密碼錯誤";
                     return View();
                 }
 
-                // 建立身份驗證 (保持與原有格式相容)
+                // 建立身份驗證
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.Name, user.Username),
                     new Claim("UserId", user.Id.ToString()),
-                    new Claim("UserRole", user.Role ?? "User")
+                    new Claim("UserRole", user.Role ?? "User"),
+                    new Claim(ClaimTypes.Email, user.Email)
                 };
 
                 var identity = new ClaimsIdentity(claims, "UserCookie");
@@ -94,7 +101,7 @@ namespace ECommercePlatform.Controllers
                 await HttpContext.SignInAsync("UserCookie", principal, new AuthenticationProperties
                 {
                     IsPersistent = true,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(2)
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24) // 延長到24小時
                 });
 
                 // 更新最後登入時間
@@ -104,65 +111,76 @@ namespace ECommercePlatform.Controllers
                 // 記錄操作日誌
                 _log.Log("Account", "Login", user.Id.ToString(), $"用戶登入：{user.Username}");
 
-                // 重導向到評價頁面 (保持與 ProjectController 相同的行為)
+                // 重導向
                 if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 {
                     return Redirect(returnUrl);
                 }
 
-                return RedirectToAction("Index", "Review", new
-                {
-                    ID = user.Id,
-                    userName = user.Username,
-                    buyOrSell = user.Role
-                });
+                return RedirectToAction("Index", "Home");
             }
             catch (Exception ex)
             {
-                ViewBag.Message = "登入過程發生錯誤";
+                ViewBag.Message = "登入過程發生錯誤，請稍後再試";
                 _log.Log("Account", "LoginError", "", ex.Message);
                 return View();
             }
         }
 
-        /// <summary>
-        /// 註冊頁面 (保持與 ProjectController.Register 相容)
-        /// </summary>
+        /// 註冊頁面
         [HttpGet]
         public IActionResult Register()
         {
             if (User.Identity?.IsAuthenticated == true)
             {
-                return RedirectToAction("Index", "Review");
+                return RedirectToAction("Index", "Home");
             }
             return View();
         }
 
-        /// <summary>
-        /// 處理註冊 (完全相容 ProjectController 的註冊邏輯)
-        /// </summary>
+        /// 處理註冊
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(string Username, string Email, string PasswordHash)
+        public async Task<IActionResult> Register(RegisterViewModel model)
         {
             try
             {
-                // 檢查用戶名重複 (保持與 ProjectController 相同的邏輯)
-                var existingUsers = _context.Users.ToList();
-                if (existingUsers.Any(u => u.Username == Username))
+                if (!ModelState.IsValid)
                 {
-                    ViewBag.Message = "帳號已存在";
-                    return View();
+                    return View(model);
                 }
 
+                // 檢查用戶名重複
+                var existingUser = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Username == model.Username);
+
+                if (existingUser != null)
+                {
+                    ViewBag.Message = "此用戶名已被使用";
+                    return View(model);
+                }
+
+                // 檢查 Email 重複
+                var existingEmail = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Email == model.Email);
+
+                if (existingEmail != null)
+                {
+                    ViewBag.Message = "此 Email 已被註冊";
+                    return View(model);
+                }
+
+                // 創建新用戶
                 var user = new User
                 {
-                    Username = Username,
-                    Email = Email ?? $"{Username}@example.com", // 提供預設 Email
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(PasswordHash),
+                    Username = model.Username,
+                    Email = model.Email,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
                     Role = "User",
                     CreatedAt = DateTime.UtcNow,
-                    IsActive = true
+                    IsActive = true,
+                    FirstName = model.FirstName,
+                    LastName = model.LastName
                 };
 
                 _context.Users.Add(user);
@@ -171,58 +189,135 @@ namespace ECommercePlatform.Controllers
                 // 記錄操作日誌
                 _log.Log("Account", "Register", user.Id.ToString(), $"新用戶註冊：{user.Username}");
 
-                ViewBag.Message = "註冊成功，請登入";
-                return RedirectToAction("Login");
+                // 發送歡迎郵件（可選）
+                try
+                {
+                    await _emailService.SendWelcomeEmailAsync(user.Email, user.Username);
+                }
+                catch (Exception ex)
+                {
+                    // 郵件發送失敗不影響註冊
+                    _log.Log("Account", "WelcomeEmailError", user.Id.ToString(), ex.Message);
+                }
+
+                ViewBag.Message = "註冊成功！請登入";
+                ViewBag.Success = true;
+                return View(model);
             }
             catch (Exception ex)
             {
                 ViewBag.Message = "註冊失敗，請稍後重試";
                 _log.Log("Account", "RegisterError", "", ex.Message);
-                return View();
+                return View(model);
             }
         }
 
-        /// <summary>
-        /// 登出 (保持原有行為)
-        /// </summary>
+        /// 登出
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            var username = User.Identity?.Name;
 
             await HttpContext.SignOutAsync("UserCookie");
 
             if (!string.IsNullOrEmpty(userId))
             {
-                _log.Log("Account", "Logout", userId, "用戶登出");
+                _log.Log("Account", "Logout", userId, $"用戶登出：{username}");
             }
 
             return RedirectToAction("Index", "Home");
         }
 
-        //為了相容性而保留的 ProjectController 路由
-        //保持與 ProjectController.SingIn 的相容性
+        /// 用戶資料頁面
         [HttpGet]
-        [Route("Project/SingIn")]
-        public IActionResult SingIn() => Login();
-
-        [HttpPost]
-        [Route("Project/SingIn")]
-        public async Task<IActionResult> SingIn(string username, string password)
+        public async Task<IActionResult> Profile()
         {
-            return await Login(username, password);
+            if (!User.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Login");
+            }
+
+            var userId = int.Parse(User.Claims.First(c => c.Type == "UserId").Value);
+            var user = await _context.Users.FindAsync(userId);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            return View(user);
         }
 
-        [HttpGet]
-        [Route("Project/Register")]
-        public IActionResult ProjectRegister() => Register();
-
+        /// 更新用戶資料
         [HttpPost]
-        [Route("Project/Register")]
-        public async Task<IActionResult> ProjectRegister(string Username, string Email, string PasswordHash)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Profile(User model)
         {
-            return await Register(Username, Email, PasswordHash);
+            if (!User.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Login");
+            }
+
+            var userId = int.Parse(User.Claims.First(c => c.Type == "UserId").Value);
+            var user = await _context.Users.FindAsync(userId);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // 只更新允許用戶修改的欄位
+            user.FirstName = model.FirstName;
+            user.LastName = model.LastName;
+            user.PhoneNumber = model.PhoneNumber;
+            user.Address = model.Address;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                _log.Log("Account", "UpdateProfile", userId.ToString(), "更新個人資料");
+                ViewBag.Message = "資料更新成功";
+                ViewBag.Success = true;
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Message = "更新失敗，請稍後再試";
+                _log.Log("Account", "UpdateProfileError", userId.ToString(), ex.Message);
+            }
+
+            return View(user);
         }
+
+        // 移除舊的 Project 路由相容性
+        // 不再提供 /Project/SingIn 等舊路由
+        // 如果需要重定向，可以在 Startup/Program.cs 中配置 URL 重寫規則
+    }
+
+    //註冊表單模型
+    public class RegisterViewModel
+    {
+        [Required(ErrorMessage = "用戶名為必填")]
+        [StringLength(50, ErrorMessage = "用戶名長度不能超過50字元")]
+        public string Username { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email 為必填")]
+        [EmailAddress(ErrorMessage = "請輸入有效的 Email 格式")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "密碼為必填")]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "密碼長度必須在6-100字元之間")]
+        public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "確認密碼為必填")]
+        [Compare("Password", ErrorMessage = "確認密碼與密碼不符")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+
+        [StringLength(50, ErrorMessage = "名字長度不能超過50字元")]
+        public string? FirstName { get; set; }
+
+        [StringLength(50, ErrorMessage = "姓氏長度不能超過50字元")]
+        public string? LastName { get; set; }
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ECommercePlatform.Data;
 using ECommercePlatform.Models;
+using ECommercePlatform.Services;
 using System.Security.Claims;
 
 namespace ECommercePlatform.Controllers
@@ -10,20 +11,24 @@ namespace ECommercePlatform.Controllers
     public class CartController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IInventoryService _inventoryService;
+        private readonly OperationLogService _logService;
 
-        public CartController(ApplicationDbContext context)
+        public CartController(
+            ApplicationDbContext context,
+            IInventoryService inventoryService,
+            OperationLogService logService)
         {
             _context = context;
+            _inventoryService = inventoryService;
+            _logService = logService;
         }
-        /// 購物車首頁
+
+        /// 購物車頁面
         [HttpGet]
+        [Authorize(AuthenticationSchemes = "UserCookie")]
         public async Task<IActionResult> Index()
         {
-            if (!User.Identity?.IsAuthenticated == true)
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
             var userId = GetCurrentUserId();
             if (userId == 0)
             {
@@ -37,28 +42,46 @@ namespace ECommercePlatform.Controllers
                 .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
 
-            return View(cartItems);
+            // 檢查每個商品的庫存狀態
+            var cartItemsWithStatus = new List<CartItemWithStatus>();
+
+            foreach (var item in cartItems)
+            {
+                var availability = await _inventoryService.CheckAvailabilityAsync(
+                    item.ProductId, item.Quantity);
+
+                cartItemsWithStatus.Add(new CartItemWithStatus
+                {
+                    CartItem = item,
+                    IsAvailable = availability.IsAvailable,
+                    AvailableQuantity = availability.AvailableQuantity,
+                    ErrorMessage = availability.ErrorMessage
+                });
+            }
+
+            return View(cartItemsWithStatus);
         }
 
-        /// 加入商品到購物車
+        /// 加入商品到購物車（整合庫存檢查）
         [HttpPost]
+        [Authorize(AuthenticationSchemes = "UserCookie")]
         public async Task<IActionResult> AddToCart([FromBody] AddToCartRequest request)
         {
             try
             {
-                // 檢查用戶是否登入
-                if (!User.Identity?.IsAuthenticated == true)
-                {
-                    return Json(new { success = false, message = "請先登入" });
-                }
-
                 var userId = GetCurrentUserId();
                 if (userId == 0)
                 {
                     return Json(new { success = false, message = "請先登入" });
                 }
 
-                // 檢查產品是否存在且活躍
+                // 驗證請求數據
+                if (request.ProductId <= 0 || request.Quantity <= 0)
+                {
+                    return Json(new { success = false, message = "請求參數無效" });
+                }
+
+                // 檢查商品是否存在且有效
                 var product = await _context.Products.FindAsync(request.ProductId);
                 if (product == null)
                 {
@@ -70,47 +93,36 @@ namespace ECommercePlatform.Controllers
                     return Json(new { success = false, message = "商品已下架" });
                 }
 
-                // 檢查庫存（如果Product有Stock屬性）
-                try
-                {
-                    var stockProperty = product.GetType().GetProperty("Stock");
-                    if (stockProperty != null)
-                    {
-                        var stockValue = (int?)stockProperty.GetValue(product);
-                        if (stockValue.HasValue && stockValue <= 0)
-                        {
-                            return Json(new { success = false, message = "商品已售完" });
-                        }
-
-                        // 檢查購物車中的數量 + 新增數量是否超過庫存
-                        var existingQuantity = await _context.CartItems
-                            .Where(c => c.UserId == userId && c.ProductId == request.ProductId)
-                            .SumAsync(c => c.Quantity);
-
-                        if (stockValue.HasValue && (existingQuantity + request.Quantity) > stockValue)
-                        {
-                            return Json(new { success = false, message = $"庫存不足，目前庫存：{stockValue}，購物車已有：{existingQuantity}" });
-                        }
-                    }
-                }
-                catch
-                {
-                    // 如果沒有Stock屬性，忽略庫存檢查
-                }
-
-                // 檢查購物車中是否已有此商品
+                // 檢查當前購物車中的數量
                 var existingCartItem = await _context.CartItems
                     .FirstOrDefaultAsync(c => c.UserId == userId && c.ProductId == request.ProductId);
 
+                var currentCartQuantity = existingCartItem?.Quantity ?? 0;
+                var totalRequestedQuantity = currentCartQuantity + request.Quantity;
+
+                // 使用庫存服務檢查可用性
+                var availability = await _inventoryService.CheckAvailabilityAsync(
+                    request.ProductId, totalRequestedQuantity);
+
+                if (!availability.IsAvailable)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = availability.ErrorMessage,
+                        availableQuantity = availability.AvailableQuantity,
+                        currentInCart = currentCartQuantity
+                    });
+                }
+
+                // 更新或新增購物車項目
                 if (existingCartItem != null)
                 {
-                    // 更新數量
                     existingCartItem.Quantity += request.Quantity;
                     existingCartItem.UpdatedAt = DateTime.UtcNow;
                 }
                 else
                 {
-                    // 新增到購物車
                     var cartItem = new CartItem
                     {
                         UserId = userId,
@@ -123,15 +135,27 @@ namespace ECommercePlatform.Controllers
                 }
 
                 await _context.SaveChangesAsync();
-                return Json(new { success = true, message = "成功加入購物車" });
+
+                // 記錄操作日誌
+                _logService.Log("Cart", "AddItem", request.ProductId.ToString(),
+                    $"加入購物車：{product.Name} x{request.Quantity}");
+
+                return Json(new
+                {
+                    success = true,
+                    message = "成功加入購物車",
+                    productName = product.Name,
+                    quantity = request.Quantity
+                });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = "系統錯誤：" + ex.Message });
+                _logService.Log("Cart", "AddItemError", request.ProductId.ToString(), ex.Message);
+                return Json(new { success = false, message = "系統錯誤，請稍後再試" });
             }
         }
 
-        /// 獲取購物車商品數量
+        //獲取購物車商品數量
         [HttpGet]
         public async Task<IActionResult> GetCartCount()
         {
@@ -160,17 +184,13 @@ namespace ECommercePlatform.Controllers
             }
         }
 
-        /// 更新購物車商品數量
+        // 更新購物車商品數量（整合庫存檢查）
         [HttpPost]
+        [Authorize(AuthenticationSchemes = "UserCookie")]
         public async Task<IActionResult> UpdateQuantity(int cartItemId, int quantity)
         {
             try
             {
-                if (!User.Identity?.IsAuthenticated == true)
-                {
-                    return Json(new { success = false, message = "請先登入" });
-                }
-
                 var userId = GetCurrentUserId();
                 var cartItem = await _context.CartItems
                     .Include(c => c.Product)
@@ -185,114 +205,183 @@ namespace ECommercePlatform.Controllers
                 {
                     // 刪除項目
                     _context.CartItems.Remove(cartItem);
-                }
-                else
-                {
-                    // 檢查庫存（如果有Stock屬性）
-                    try
-                    {
-                        var stockProperty = cartItem.Product.GetType().GetProperty("Stock");
-                        if (stockProperty != null)
-                        {
-                            var stockValue = (int?)stockProperty.GetValue(cartItem.Product);
-                            if (stockValue.HasValue && quantity > stockValue)
-                            {
-                                return Json(new { success = false, message = $"數量超過庫存，目前庫存：{stockValue}" });
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        // 忽略庫存檢查
-                    }
+                    await _context.SaveChangesAsync();
 
-                    // 更新數量
-                    cartItem.Quantity = quantity;
-                    cartItem.UpdatedAt = DateTime.UtcNow;
+                    _logService.Log("Cart", "RemoveItem", cartItem.ProductId.ToString(),
+                        $"從購物車移除：{cartItem.Product.Name}");
+
+                    return Json(new { success = true, message = "已移除商品" });
                 }
+
+                // 檢查庫存可用性
+                var availability = await _inventoryService.CheckAvailabilityAsync(
+                    cartItem.ProductId, quantity);
+
+                if (!availability.IsAvailable)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = availability.ErrorMessage,
+                        availableQuantity = availability.AvailableQuantity
+                    });
+                }
+
+                // 更新數量
+                var oldQuantity = cartItem.Quantity;
+                cartItem.Quantity = quantity;
+                cartItem.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
-                return Json(new { success = true });
+
+                _logService.Log("Cart", "UpdateQuantity", cartItem.ProductId.ToString(),
+                    $"更新購物車數量：{cartItem.Product.Name} {oldQuantity}→{quantity}");
+
+                return Json(new { success = true, message = "數量更新成功" });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message });
+                _logService.Log("Cart", "UpdateQuantityError", cartItemId.ToString(), ex.Message);
+                return Json(new { success = false, message = "更新失敗，請稍後再試" });
             }
         }
 
-        /// 移除購物車商品
+        //移除購物車商品
         [HttpPost]
+        [Authorize(AuthenticationSchemes = "UserCookie")]
         public async Task<IActionResult> RemoveItem(int cartItemId)
         {
             try
             {
-                if (!User.Identity?.IsAuthenticated == true)
-                {
-                    return Json(new { success = false, message = "請先登入" });
-                }
-
                 var userId = GetCurrentUserId();
                 var cartItem = await _context.CartItems
+                    .Include(c => c.Product)
                     .FirstOrDefaultAsync(c => c.Id == cartItemId && c.UserId == userId);
 
                 if (cartItem != null)
                 {
+                    var productName = cartItem.Product.Name;
                     _context.CartItems.Remove(cartItem);
                     await _context.SaveChangesAsync();
+
+                    _logService.Log("Cart", "RemoveItem", cartItem.ProductId.ToString(),
+                        $"從購物車移除：{productName}");
                 }
 
-                return Json(new { success = true });
+                return Json(new { success = true, message = "商品已移除" });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message });
+                _logService.Log("Cart", "RemoveItemError", cartItemId.ToString(), ex.Message);
+                return Json(new { success = false, message = "移除失敗，請稍後再試" });
             }
         }
 
-        /// 清空購物車
+        //清空購物車
         [HttpPost]
+        [Authorize(AuthenticationSchemes = "UserCookie")]
         public async Task<IActionResult> ClearCart()
         {
             try
             {
-                if (!User.Identity?.IsAuthenticated == true)
-                {
-                    return Json(new { success = false, message = "請先登入" });
-                }
-
                 var userId = GetCurrentUserId();
-                var cartItems = _context.CartItems.Where(c => c.UserId == userId);
+                var cartItems = await _context.CartItems
+                    .Where(c => c.UserId == userId)
+                    .ToListAsync();
 
-                _context.CartItems.RemoveRange(cartItems);
-                await _context.SaveChangesAsync();
+                if (cartItems.Any())
+                {
+                    _context.CartItems.RemoveRange(cartItems);
+                    await _context.SaveChangesAsync();
+
+                    _logService.Log("Cart", "Clear", "",
+                        $"清空購物車，共 {cartItems.Count} 項商品");
+                }
 
                 return Json(new { success = true, message = "購物車已清空" });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message });
+                _logService.Log("Cart", "ClearError", "", ex.Message);
+                return Json(new { success = false, message = "清空失敗，請稍後再試" });
             }
         }
 
-        /// 獲取當前用戶ID
+        // 批量檢查購物車商品庫存狀態
+        [HttpPost]
+        [Authorize(AuthenticationSchemes = "UserCookie")]
+        public async Task<IActionResult> CheckCartStock()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var cartItems = await _context.CartItems
+                    .Include(c => c.Product)
+                    .Where(c => c.UserId == userId)
+                    .ToListAsync();
+
+                var stockStatus = new List<object>();
+
+                foreach (var item in cartItems)
+                {
+                    var availability = await _inventoryService.CheckAvailabilityAsync(
+                        item.ProductId, item.Quantity);
+
+                    stockStatus.Add(new
+                    {
+                        cartItemId = item.Id,
+                        productId = item.ProductId,
+                        productName = item.Product.Name,
+                        requestedQuantity = item.Quantity,
+                        isAvailable = availability.IsAvailable,
+                        availableQuantity = availability.AvailableQuantity,
+                        errorMessage = availability.ErrorMessage
+                    });
+                }
+
+                return Json(new { success = true, stockStatus = stockStatus });
+            }
+            catch (Exception ex)
+            {
+                _logService.Log("Cart", "CheckStockError", "", ex.Message);
+                return Json(new { success = false, message = "庫存檢查失敗" });
+            }
+        }
+
+        //獲取當前用戶ID
         private int GetCurrentUserId()
         {
             var userIdClaim = User.FindFirstValue("UserId");
             return int.TryParse(userIdClaim, out int userId) ? userId : 0;
         }
 
-        /// 檢查用戶是否為管理員
+        //檢查是否為管理員
         private bool IsAdmin()
         {
             var userRole = User.FindFirstValue("UserRole");
             return userRole == "Admin" || userRole == "Engineer";
         }
+    }
 
-        /// 加入購物車請求模型
-        public class AddToCartRequest
-        {
-            public int ProductId { get; set; }
-            public int Quantity { get; set; } = 1;
-        }
+    // DTO 和輔助類別
+    //加入購物車請求
+    public class AddToCartRequest
+    {
+        public int ProductId { get; set; }
+        public int Quantity { get; set; } = 1;
+    }
+
+    //帶庫存狀態的購物車項目
+    public class CartItemWithStatus
+    {
+        public CartItem CartItem { get; set; } = null!;
+        public bool IsAvailable { get; set; }
+        public int AvailableQuantity { get; set; }
+        public string ErrorMessage { get; set; } = string.Empty;
+
+        // 便利屬性
+        public bool HasStockIssue => !IsAvailable;
+        public bool IsPartiallyAvailable => AvailableQuantity > 0 && AvailableQuantity < CartItem.Quantity;
+        public int ExcessQuantity => Math.Max(0, CartItem.Quantity - AvailableQuantity);
     }
 }

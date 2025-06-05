@@ -6,10 +6,7 @@ namespace ECommercePlatform.Data
     public class ApplicationDbContext : DbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options)
-        {
-        }
-
+            : base(options) { }
         public DbSet<User> Users { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<CartItem> CartItems { get; set; }
@@ -21,24 +18,86 @@ namespace ECommercePlatform.Data
         public DbSet<OperationLog>? OperationLogs { get; set; }
         public DbSet<ReviewReport> ReviewReports { get; set; }
 
+        // 新增：庫存管理相關實體
+        public DbSet<StockReservation> StockReservations { get; set; }
+        public DbSet<StockMovement> StockMovements { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // User 配置 (添加新欄位)
+            // User 配置
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.HasIndex(e => e.Username).IsUnique();
                 entity.HasIndex(e => e.Email).IsUnique();
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
-
-                // 新增欄位配置
                 entity.Property(e => e.Role).HasDefaultValue("User");
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
             });
 
-            // Review 配置 - 在 OnModelCreating 方法中替換原有的 Review 配置
+            // Product 配置
+            modelBuilder.Entity<Product>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.DiscountPrice).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.Stock).HasDefaultValue(0); //庫存預設值
+
+                // 添加庫存檢查約束
+                entity.HasCheckConstraint("CK_Product_Stock", "Stock >= 0");
+            });
+
+            // Order 配置
+            modelBuilder.Entity<Order>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TotalAmount).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.OrderDate).HasDefaultValueSql("GETUTCDATE()");
+
+                entity.HasOne(e => e.User)
+                      .WithMany(u => u.Orders)
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // OrderItem 配置
+            modelBuilder.Entity<OrderItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.UnitPrice).HasColumnType("decimal(18,2)");
+
+                entity.HasOne(e => e.Order)
+                      .WithMany(o => o.OrderItems)
+                      .HasForeignKey(e => e.OrderId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Product)
+                      .WithMany(p => p.OrderItems)
+                      .HasForeignKey(e => e.ProductId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // CartItem 配置
+            modelBuilder.Entity<CartItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.User)
+                      .WithMany(u => u.CartItems)
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Product)
+                      .WithMany(p => p.CartItems)
+                      .HasForeignKey(e => e.ProductId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => new { e.UserId, e.ProductId }).IsUnique();
+            });
+
+            // Review 配置
             modelBuilder.Entity<Review>(entity =>
             {
                 entity.HasKey(e => e.Id);
@@ -47,15 +106,13 @@ namespace ECommercePlatform.Data
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
                 entity.Property(e => e.IsVisible).HasDefaultValue(true);
 
-                // 外鍵關係
                 entity.HasOne(e => e.User)
                       .WithMany(u => u.Reviews)
                       .HasForeignKey(e => e.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                // 🔧 修復：指定 Product.Reviews 導航屬性
                 entity.HasOne(e => e.Product)
-                      .WithMany(p => p.Reviews) // 正確指定反向導航，而非空的 WithMany()
+                      .WithMany(p => p.Reviews)
                       .HasForeignKey(e => e.ProductId)
                       .OnDelete(DeleteBehavior.Cascade);
 
@@ -64,7 +121,6 @@ namespace ECommercePlatform.Data
                       .HasForeignKey(e => e.ReplyId)
                       .OnDelete(DeleteBehavior.Restrict);
 
-                // 建立索引
                 entity.HasIndex(e => new { e.UserId, e.ProductId });
                 entity.HasIndex(e => e.CreatedAt);
                 entity.HasIndex(e => e.Rating);
@@ -90,77 +146,8 @@ namespace ECommercePlatform.Data
                       .HasForeignKey(e => e.ReporterId)
                       .OnDelete(DeleteBehavior.Restrict);
 
-                // 索引
                 entity.HasIndex(e => e.IsProcessed);
                 entity.HasIndex(e => e.CreatedAt);
-            });
-
-            // 其他現有實體的配置 (保持不變)
-            ConfigureOtherEntities(modelBuilder);
-        }
-
-        private void ConfigureOtherEntities(ModelBuilder modelBuilder)
-        {
-            // Product 配置
-            modelBuilder.Entity<Product>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
-                if (entity.Metadata.FindProperty("DiscountPrice") != null)
-                {
-                    entity.Property(e => e.DiscountPrice).HasColumnType("decimal(18,2)");
-                }
-            });
-
-            // Order 配置
-            modelBuilder.Entity<Order>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.TotalAmount).HasColumnType("decimal(18,2)");
-                entity.Property(e => e.OrderDate).HasDefaultValueSql("GETUTCDATE()");
-
-                entity.HasOne(e => e.User)
-                      .WithMany(u => u.Orders)
-                      .HasForeignKey(e => e.UserId)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
-
-            // OrderItem 配置 - 修復導航屬性
-            modelBuilder.Entity<OrderItem>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.UnitPrice).HasColumnType("decimal(18,2)");
-
-                entity.HasOne(e => e.Order)
-                      .WithMany(o => o.OrderItems)
-                      .HasForeignKey(e => e.OrderId)
-                      .OnDelete(DeleteBehavior.Cascade);
-
-                // 🔧 修復：指定 Product.OrderItems 導航屬性
-                entity.HasOne(e => e.Product)
-                      .WithMany(p => p.OrderItems) // 正確指定反向導航
-                      .HasForeignKey(e => e.ProductId)
-                      .OnDelete(DeleteBehavior.Restrict);
-            });
-
-            // CartItem 配置 - 修復導航屬性
-            modelBuilder.Entity<CartItem>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-
-                entity.HasOne(e => e.User)
-                      .WithMany(u => u.CartItems)
-                      .HasForeignKey(e => e.UserId)
-                      .OnDelete(DeleteBehavior.Cascade);
-
-                // 🔧 修復：指定 Product.CartItems 導航屬性
-                entity.HasOne(e => e.Product)
-                      .WithMany(p => p.CartItems) // 正確指定反向導航
-                      .HasForeignKey(e => e.ProductId)
-                      .OnDelete(DeleteBehavior.Cascade);
-
-                // 確保同一用戶對同一商品的購物車項目唯一
-                entity.HasIndex(e => new { e.UserId, e.ProductId }).IsUnique();
             });
 
             // Engineer 配置
@@ -168,21 +155,17 @@ namespace ECommercePlatform.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.HasIndex(e => e.Username).IsUnique();
-                if (entity.Metadata.FindProperty("Email") != null)
-                {
-                    entity.HasIndex(e => e.Email).IsUnique();
-                }
+                entity.HasIndex(e => e.Email).IsUnique();
             });
 
-            // OperationLog 配置 - 修復導航屬性
+            // OperationLog 配置
             modelBuilder.Entity<OperationLog>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
-                // 🔧 修復：指定 Engineer.OperationLogs 導航屬性
                 entity.HasOne(e => e.Engineer)
-                      .WithMany(eng => eng.OperationLogs) // 正確指定反向導航
+                      .WithMany(eng => eng.OperationLogs)
                       .HasForeignKey(e => e.EngineerId)
                       .OnDelete(DeleteBehavior.SetNull)
                       .IsRequired(false);
@@ -202,20 +185,80 @@ namespace ECommercePlatform.Data
                 entity.HasIndex(e => e.Token).IsUnique();
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
             });
-        }
-        public static void Seed(ModelBuilder modelBuilder)
-        {
-            // 預設種子資料
-            modelBuilder.Entity<User>().HasData(
-                new User { Id = 1, Username = "admin", Email = "admin@example.com", PasswordHash = "admin123", FirstName = "Admin", LastName = "User", Address = "Default Address" },
-                new User { Id = 2, Username = "john_doe", Email = "john@example.com", PasswordHash = "password", FirstName = "John", LastName = "Doe", Address = "Default Address" }
-            );
 
-            modelBuilder.Entity<Product>().HasData(
-                new Product { Id = 1, Name = "Laptop", Description = "High performance laptop", Price = 1500.00m, ImageUrl = "laptop.jpg" },
-                new Product { Id = 2, Name = "Smartphone", Description = "Latest model smartphone", Price = 799.99m, ImageUrl = "smartphone.jpg" }
-            );
-            // 可根據需要新增更多資料
+            // 新增：StockReservation 配置
+            modelBuilder.Entity<StockReservation>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasMaxLength(50); // GUID 字串
+
+                entity.HasOne(e => e.Product)
+                      .WithMany()
+                      .HasForeignKey(e => e.ProductId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+                entity.Property(e => e.IsConfirmed).HasDefaultValue(false);
+
+                // 索引優化
+                entity.HasIndex(e => new { e.ProductId, e.ExpiresAt, e.IsConfirmed });
+                entity.HasIndex(e => e.ExpiresAt);
+
+                // 檢查約束
+                entity.HasCheckConstraint("CK_StockReservation_Quantity", "Quantity > 0");
+            });
+
+            // 新增：StockMovement 配置
+            modelBuilder.Entity<StockMovement>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.Product)
+                      .WithMany()
+                      .HasForeignKey(e => e.ProductId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.User)
+                      .WithMany()
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .IsRequired(false);
+
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+                entity.Property(e => e.Reason).HasMaxLength(500);
+
+                // 索引優化
+                entity.HasIndex(e => new { e.ProductId, e.CreatedAt });
+                entity.HasIndex(e => e.MovementType);
+                entity.HasIndex(e => e.CreatedAt);
+
+                // 枚舉轉換
+                entity.Property(e => e.MovementType)
+                      .HasConversion<string>();
+            });
+        }
+
+        // 新增：資料庫初始化時的額外配置
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            // 自動設定 UpdatedAt 時間戳
+            var entries = ChangeTracker.Entries()
+                .Where(e => e.State == EntityState.Modified)
+                .ToList();
+
+            foreach (var entry in entries)
+            {
+                if (entry.Entity is CartItem cartItem)
+                {
+                    cartItem.UpdatedAt = DateTime.UtcNow;
+                }
+                else if (entry.Entity is Review review && review.UpdatedAt == null)
+                {
+                    review.UpdatedAt = DateTime.UtcNow;
+                }
+            }
+
+            return await base.SaveChangesAsync(cancellationToken);
         }
     }
 }

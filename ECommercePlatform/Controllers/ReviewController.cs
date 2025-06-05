@@ -5,6 +5,7 @@ using ECommercePlatform.Data;
 using ECommercePlatform.Models;
 using ECommercePlatform.Services;
 using System.Security.Claims;
+using System.ComponentModel.DataAnnotations;
 
 namespace ECommercePlatform.Controllers
 {
@@ -21,324 +22,452 @@ namespace ECommercePlatform.Controllers
             _log = log;
         }
 
-        /// <summary>
-        /// 評價列表 (完全保持 ProjectController.Index 的介面)
-        /// </summary>
-        public IActionResult Index(int? ID = null, string userName = "", string buyOrSell = "",
-                                  string sort = "latest", string keyword = "", int? scoreFilter = null)
+        //評價列表頁面（完全使用 EF Core + Review 模型）
+        [HttpGet]
+        public async Task<IActionResult> Index(int? productId = null, string sort = "latest",
+            string keyword = "", int? scoreFilter = null, int page = 1)
         {
+            const int pageSize = 10;
+
             try
             {
-                // 使用 EF Core 查詢，但保持相同的邏輯
                 var query = _context.Reviews
                     .Include(r => r.User)
+                    .Include(r => r.Product)
                     .Where(r => r.IsVisible)
                     .AsQueryable();
 
-                // 如果 Product 導航屬性存在，也 Include 它
-                try
+                // 產品篩選
+                if (productId.HasValue)
                 {
-                    query = query.Include(r => r.Product);
-                }
-                catch
-                {
-                    // 如果 Product 不存在，忽略錯誤
+                    query = query.Where(r => r.ProductId == productId.Value);
+                    var product = await _context.Products.FindAsync(productId.Value);
+                    ViewBag.ProductName = product?.Name;
                 }
 
-                // 關鍵字搜尋 (保持原功能)
+                // 關鍵字搜尋
                 if (!string.IsNullOrEmpty(keyword))
-                    query = query.Where(r => r.Content.Contains(keyword));
+                {
+                    query = query.Where(r => r.Content.Contains(keyword) ||
+                                       r.Product.Name.Contains(keyword));
+                }
 
-                // 評分篩選 (保持原功能)
+                // 評分篩選
                 if (scoreFilter.HasValue)
+                {
                     query = query.Where(r => r.Rating == scoreFilter.Value);
+                }
 
-                // 排序 (保持原功能)
+                // 排序
                 query = sort switch
                 {
                     "latest" => query.OrderByDescending(r => r.CreatedAt),
                     "oldest" => query.OrderBy(r => r.CreatedAt),
-                    "highscore" => query.OrderByDescending(r => r.Rating),
-                    "lowscore" => query.OrderBy(r => r.Rating),
+                    "highscore" => query.OrderByDescending(r => r.Rating).ThenByDescending(r => r.CreatedAt),
+                    "lowscore" => query.OrderBy(r => r.Rating).ThenByDescending(r => r.CreatedAt),
                     _ => query.OrderByDescending(r => r.CreatedAt)
                 };
 
-                var reviews = query.ToList();
+                var totalItems = await query.CountAsync();
+                var reviews = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
 
-                // 轉換為與 Messages 相容的格式
-                var messages = reviews.Select(r => new Messages
+                // 計算統計數據
+                var allReviews = await _context.Reviews
+                    .Where(r => r.IsVisible && (!productId.HasValue || r.ProductId == productId.Value))
+                    .ToListAsync();
+
+                var result = new ReviewListViewModel
                 {
-                    messageID = r.Id,
-                    userID = r.UserId,
-                    productID = r.ProductId,
-                    userName = r.UserName ?? r.User?.Username ?? "",
-                    main = r.Content,
-                    score = r.Rating,
-                    imageData = r.ImageData,
-                    date = r.CreatedAt,
-                    replyID = r.ReplyId ?? 0
-                }).ToList();
+                    Reviews = reviews,
+                    TotalItems = totalItems,
+                    PageNumber = page,
+                    PageSize = pageSize,
+                    TotalReviews = allReviews.Count,
+                    AverageScore = allReviews.Any() ? allReviews.Average(r => r.Rating) : 0,
+                    RatingDistribution = allReviews
+                        .GroupBy(r => r.Rating)
+                        .ToDictionary(g => g.Key, g => g.Count())
+                };
 
-                // 保持原有的 ViewBag 設定
-                ViewBag.ID = ID;
-                ViewBag.name = userName;
-                ViewBag.identity = buyOrSell;
-                ViewBag.messages = messages;
-                ViewBag.totalMessages = messages.Count;
-                ViewBag.averageScore = messages.Any() ? messages.Average(m => m.score) : 0;
+                // 保存篩選參數
+                ViewBag.ProductId = productId;
+                ViewBag.Sort = sort;
+                ViewBag.Keyword = keyword;
+                ViewBag.ScoreFilter = scoreFilter;
 
-                // 支援 AJAX 請求 (保持原功能)
+                // 支援 AJAX 請求
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                    return PartialView("_MessageListPartial", messages);
+                {
+                    return PartialView("_ReviewListPartial", result);
+                }
 
-                return View(messages);
+                return View(result);
             }
             catch (Exception ex)
             {
                 _log.Log("Review", "IndexError", "", ex.Message);
-                ViewBag.messages = new List<Messages>();
-                ViewBag.totalMessages = 0;
-                ViewBag.averageScore = 0;
-                return View(new List<Messages>());
+                return View(new ReviewListViewModel());
             }
         }
 
-        /// <summary>
-        /// 新增評價 (保持 ProjectController.SubmitMessage 的介面)
-        /// </summary>
+        //新增評價（只支援 Review 模型）
         [HttpPost]
         [Authorize(AuthenticationSchemes = "UserCookie")]
-        public async Task<IActionResult> SubmitMessage(int replyID, int userID, int productID,
-                                                      string userName, string main, int score, IFormFile? image)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create([FromForm] CreateReviewRequest request)
         {
             try
             {
-                byte[]? imageData = null;
-
-                // 保持原有的圖片處理邏輯
-                if (image != null && image.Length > 0)
+                if (!ModelState.IsValid)
                 {
-                    // 檢查檔案大小 (5MB 限制)
-                    if (image.Length > 5 * 1024 * 1024)
+                    return BadRequest(ModelState);
+                }
+
+                var userId = int.Parse(User.Claims.First(c => c.Type == "UserId").Value);
+                var userName = User.Identity?.Name ?? "";
+
+                // 檢查是否已經評價過
+                var existingReview = await _context.Reviews
+                    .FirstOrDefaultAsync(r => r.UserId == userId && r.ProductId == request.ProductId);
+
+                if (existingReview != null)
+                {
+                    return Json(new { success = false, message = "您已經評價過此商品" });
+                }
+
+                // 檢查是否有購買記錄（可選）
+                var hasPurchased = await _context.OrderItems
+                    .Include(oi => oi.Order)
+                    .AnyAsync(oi => oi.ProductId == request.ProductId &&
+                                  oi.Order.UserId == userId &&
+                                  oi.Order.OrderStatus == "已送達");
+
+                if (!hasPurchased)
+                {
+                    return Json(new { success = false, message = "只有購買過的商品才能評價" });
+                }
+
+                // 處理圖片上傳
+                byte[]? imageData = null;
+                if (request.ImageFile != null && request.ImageFile.Length > 0)
+                {
+                    if (request.ImageFile.Length > 5 * 1024 * 1024) // 5MB 限制
                     {
-                        return BadRequest(new { Message = "圖片檔案不能超過 5MB" });
+                        return Json(new { success = false, message = "圖片檔案不能超過 5MB" });
                     }
 
-                    // 檢查檔案類型
                     var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif" };
-                    if (!allowedTypes.Contains(image.ContentType.ToLower()))
+                    if (!allowedTypes.Contains(request.ImageFile.ContentType.ToLower()))
                     {
-                        return BadRequest(new { Message = "只允許上傳 JPG、PNG 或 GIF 格式的圖片" });
+                        return Json(new { success = false, message = "只允許上傳 JPG、PNG 或 GIF 格式的圖片" });
                     }
 
                     using var ms = new MemoryStream();
-                    await image.CopyToAsync(ms);
+                    await request.ImageFile.CopyToAsync(ms);
                     imageData = ms.ToArray();
                 }
 
+                // 創建評價
                 var review = new Review
                 {
-                    UserId = userID,
-                    ProductId = productID,
-                    UserName = userName, // 冗余欄位，為了相容性
-                    Content = main,
-                    Rating = score,
+                    UserId = userId,
+                    ProductId = request.ProductId,
+                    UserName = userName,
+                    Content = request.Content,
+                    Rating = request.Rating,
                     ImageData = imageData,
-                    ReplyId = replyID > 0 ? replyID : null,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     IsVisible = true
                 };
 
                 _context.Reviews.Add(review);
                 await _context.SaveChangesAsync();
 
-                _log.Log("Review", "Create", review.Id.ToString(), $"新增評價：{score}星");
+                _log.Log("Review", "Create", review.Id.ToString(),
+                    $"新增評價：{request.Rating}星，商品ID: {request.ProductId}");
 
-                return Ok(new { Message = "評價新增成功" });
+                return Json(new
+                {
+                    success = true,
+                    message = "評價新增成功",
+                    reviewId = review.Id
+                });
             }
             catch (Exception ex)
             {
                 _log.Log("Review", "CreateError", "", ex.Message);
-                return BadRequest(new { Message = "新增評價失敗" });
+                return Json(new { success = false, message = "新增評價失敗，請稍後重試" });
             }
         }
 
-        /// <summary>
-        /// 刪除評價 (保持 ProjectController.DeleteMessage 的介面)
-        /// </summary>
+        //更新評價
         [HttpPost]
         [Authorize(AuthenticationSchemes = "UserCookie")]
-        public async Task<IActionResult> DeleteMessage(int messageID)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Update(int reviewId, string content, int rating)
         {
             try
             {
                 var userId = int.Parse(User.Claims.First(c => c.Type == "UserId").Value);
-                var userRole = User.Claims.FirstOrDefault(c => c.Type == "UserRole")?.Value ??
-                              User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "";
-
-                var review = _context.Reviews.FirstOrDefault(r => r.Id == messageID);
-                if (review == null)
-                    return NotFound();
-
-                // 保持原權限檢查邏輯
-                if (review.UserId != userId && userRole != "admin")
-                    return Unauthorized();
-
-                _context.Reviews.Remove(review);
-                await _context.SaveChangesAsync();
-
-                _log.Log("Review", "Delete", messageID.ToString(), "刪除評價");
-
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                _log.Log("Review", "DeleteError", messageID.ToString(), ex.Message);
-                return BadRequest();
-            }
-        }
-
-        /// <summary>
-        /// 更新評價 (保持 ProjectController.UpdateMessage 的介面)
-        /// </summary>
-        [HttpPost]
-        [Authorize(AuthenticationSchemes = "UserCookie")]
-        public async Task<IActionResult> UpdateMessage(Messages m)
-        {
-            try
-            {
-                var userId = int.Parse(User.Claims.First(c => c.Type == "UserId").Value);
-                var review = _context.Reviews.FirstOrDefault(r => r.Id == m.messageID && r.UserId == userId);
+                var review = await _context.Reviews
+                    .FirstOrDefaultAsync(r => r.Id == reviewId && r.UserId == userId);
 
                 if (review == null)
-                    return NotFound();
+                {
+                    return Json(new { success = false, message = "評價不存在或無權限修改" });
+                }
 
-                review.Content = m.main;
-                review.Rating = m.score;
+                review.Content = content;
+                review.Rating = rating;
                 review.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
 
-                _log.Log("Review", "Update", m.messageID.ToString(), "更新評價");
+                _log.Log("Review", "Update", reviewId.ToString(), "更新評價");
 
-                return Ok();
+                return Json(new { success = true, message = "評價更新成功" });
             }
             catch (Exception ex)
             {
-                _log.Log("Review", "UpdateError", m.messageID.ToString(), ex.Message);
-                return BadRequest();
+                _log.Log("Review", "UpdateError", reviewId.ToString(), ex.Message);
+                return Json(new { success = false, message = "更新評價失敗" });
             }
         }
 
-        /// <summary>
-        /// 發送檢舉 (保持 ProjectController.ComplainSend 的介面)
-        /// </summary>
+        //刪除評價
         [HttpPost]
-        public async Task<IActionResult> ComplainSend(string content, bool harassment = false,
-                                                     bool pornography = false, bool threaten = false,
-                                                     bool hatred = false, string detail = "")
+        [Authorize(AuthenticationSchemes = "UserCookie")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int reviewId)
         {
             try
             {
-                // 保持原有的郵件格式
-                var body = $"檢舉內容:{content}\n騷擾:{harassment}\n色情:{pornography}\n威脅:{threaten}\n仇恨:{hatred}\n詳細描述:{detail}";
+                var userId = int.Parse(User.Claims.First(c => c.Type == "UserId").Value);
+                var userRole = User.Claims.FirstOrDefault(c => c.Type == "UserRole")?.Value ?? "";
 
-                // 使用 EmailService 發送 (保持原功能)
-                _emailService.SendComplainMail("留言檢舉通知", body);
-
-                // 同時記錄到資料庫
-                if (User.Identity?.IsAuthenticated == true)
+                var review = await _context.Reviews.FindAsync(reviewId);
+                if (review == null)
                 {
-                    var userId = int.Parse(User.Claims.First(c => c.Type == "UserId").Value);
-
-                    // 嘗試找到對應的評價
-                    var targetReview = _context.Reviews
-                        .Where(r => r.Content.Contains(content) || content.Contains(r.Content))
-                        .OrderByDescending(r => r.CreatedAt)
-                        .FirstOrDefault();
-
-                    if (targetReview != null)
-                    {
-                        var report = new ReviewReport
-                        {
-                            ReviewId = targetReview.Id,
-                            ReporterId = userId,
-                            Reason = "檢舉不當內容",
-                            Description = detail,
-                            Harassment = harassment,
-                            Pornography = pornography,
-                            Threaten = threaten,
-                            Hatred = hatred,
-                            CreatedAt = DateTime.UtcNow
-                        };
-
-                        _context.ReviewReports.Add(report);
-                        await _context.SaveChangesAsync();
-                    }
+                    return Json(new { success = false, message = "評價不存在" });
                 }
 
-                _log.Log("Review", "Complain", "", "檢舉信件已發送");
+                // 檢查權限：評價者本人或管理員
+                if (review.UserId != userId && userRole != "Admin" && userRole != "Engineer")
+                {
+                    return Json(new { success = false, message = "無權限刪除此評價" });
+                }
 
-                return Ok(new { Message = "檢舉已提交" });
+                _context.Reviews.Remove(review);
+                await _context.SaveChangesAsync();
+
+                _log.Log("Review", "Delete", reviewId.ToString(), "刪除評價");
+
+                return Json(new { success = true, message = "評價已刪除" });
             }
             catch (Exception ex)
             {
-                _log.Log("Review", "ComplainError", "", ex.Message);
-                return BadRequest(new { Message = "檢舉提交失敗" });
+                _log.Log("Review", "DeleteError", reviewId.ToString(), ex.Message);
+                return Json(new { success = false, message = "刪除評價失敗" });
             }
         }
 
-        /// <summary>
-        /// 錯誤頁面 (保持 ProjectController.ErrorAccount 的介面)
-        /// </summary>
-        public IActionResult ErrorAccount()
+        //檢舉評價
+        [HttpPost]
+        [Authorize(AuthenticationSchemes = "UserCookie")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Report([FromForm] ReportReviewRequest request)
         {
-            var emptyMessages = new List<Messages>();
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                return PartialView("_MessageListPartial", emptyMessages);
-            return View(emptyMessages);
+            try
+            {
+                var userId = int.Parse(User.Claims.First(c => c.Type == "UserId").Value);
+
+                // 檢查是否已經檢舉過
+                var existingReport = await _context.ReviewReports
+                    .FirstOrDefaultAsync(rr => rr.ReviewId == request.ReviewId && rr.ReporterId == userId);
+
+                if (existingReport != null)
+                {
+                    return Json(new { success = false, message = "您已經檢舉過此評價" });
+                }
+
+                // 創建檢舉記錄
+                var report = new ReviewReport
+                {
+                    ReviewId = request.ReviewId,
+                    ReporterId = userId,
+                    Reason = request.Reason,
+                    Description = request.Description,
+                    Harassment = request.Harassment,
+                    Pornography = request.Pornography,
+                    Threaten = request.Threaten,
+                    Hatred = request.Hatred,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.ReviewReports.Add(report);
+                await _context.SaveChangesAsync();
+
+                // 發送檢舉通知郵件
+                try
+                {
+                    var review = await _context.Reviews
+                        .Include(r => r.Product)
+                        .FirstOrDefaultAsync(r => r.Id == request.ReviewId);
+
+                    if (review != null)
+                    {
+                        var emailBody = $@"
+                            收到新的評價檢舉：
+                            
+                            評價ID: {request.ReviewId}
+                            商品: {review.Product.Name}
+                            檢舉原因: {request.Reason}
+                            詳細描述: {request.Description}
+                            
+                            檢舉類型:
+                            - 騷擾: {request.Harassment}
+                            - 色情: {request.Pornography}
+                            - 威脅: {request.Threaten}
+                            - 仇恨: {request.Hatred}
+                            
+                            請前往後台處理此檢舉。
+                        ";
+
+                        await _emailService.SendComplainMailAsync("評價檢舉通知", emailBody);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.Log("Review", "ReportEmailError", request.ReviewId.ToString(), ex.Message);
+                }
+
+                _log.Log("Review", "Report", request.ReviewId.ToString(), $"檢舉評價：{request.Reason}");
+
+                return Json(new { success = true, message = "檢舉已提交，我們會儘快處理" });
+            }
+            catch (Exception ex)
+            {
+                _log.Log("Review", "ReportError", request.ReviewId.ToString(), ex.Message);
+                return Json(new { success = false, message = "檢舉提交失敗，請稍後重試" });
+            }
         }
 
-        // ========= 為了相容性而保留的 ProjectController 路由 =========
-
-        /// <summary>
-        /// 保持與 ProjectController 路由的完全相容性
-        /// </summary>
+        //獲取商品評價（API）
         [HttpGet]
-        [Route("Project/Index")]
-        public IActionResult ProjectIndex(int? ID = null, string userName = "", string buyOrSell = "",
-                                         string sort = "latest", string keyword = "", int? scoreFilter = null)
+        [Route("api/reviews/product/{productId}")]
+        public async Task<IActionResult> GetProductReviews(int productId, int page = 1, int pageSize = 5)
         {
-            return Index(ID, userName, buyOrSell, sort, keyword, scoreFilter);
+            try
+            {
+                var query = _context.Reviews
+                    .Include(r => r.User)
+                    .Where(r => r.ProductId == productId && r.IsVisible)
+                    .OrderByDescending(r => r.CreatedAt);
+
+                var totalItems = await query.CountAsync();
+                var reviews = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(r => new
+                    {
+                        r.Id,
+                        r.Content,
+                        r.Rating,
+                        r.CreatedAt,
+                        UserName = r.UserName ?? r.User.Username,
+                        HasImage = r.ImageData != null
+                    })
+                    .ToListAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    data = reviews,
+                    totalItems = totalItems,
+                    page = page,
+                    pageSize = pageSize,
+                    totalPages = (int)Math.Ceiling((double)totalItems / pageSize)
+                });
+            }
+            catch (Exception ex)
+            {
+                _log.Log("Review", "GetProductReviewsError", productId.ToString(), ex.Message);
+                return Json(new { success = false, message = "獲取評價失敗" });
+            }
         }
 
-        [HttpPost]
-        [Route("Project/SubmitMessage")]
-        public async Task<IActionResult> ProjectSubmitMessage(int replyID, int userID, int productID,
-                                                             string userName, string main, int score, IFormFile? image)
-        {
-            return await SubmitMessage(replyID, userID, productID, userName, main, score, image);
-        }
-
-        [HttpPost]
-        [Route("Project/DeleteMessage")]
-        public async Task<IActionResult> ProjectDeleteMessage(int messageID)
-        {
-            return await DeleteMessage(messageID);
-        }
-
-        [HttpPost]
-        [Route("Project/UpdateMessage")]
-        public async Task<IActionResult> ProjectUpdateMessage(Messages m)
-        {
-            return await UpdateMessage(m);
-        }
-
+        //獲取評價圖片
         [HttpGet]
-        [Route("Project/ErrorAccount")]
-        public IActionResult ProjectErrorAccount()
+        [Route("reviews/image/{reviewId}")]
+        public async Task<IActionResult> GetReviewImage(int reviewId)
         {
-            return ErrorAccount();
+            try
+            {
+                var review = await _context.Reviews.FindAsync(reviewId);
+                if (review?.ImageData == null)
+                {
+                    return NotFound();
+                }
+
+                return File(review.ImageData, "image/jpeg");
+            }
+            catch
+            {
+                return NotFound();
+            }
         }
+    }
+
+    //ViewModel 和 DTO 類別
+    public class ReviewListViewModel
+    {
+        public List<Review> Reviews { get; set; } = new();
+        public int TotalItems { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalReviews { get; set; }
+        public double AverageScore { get; set; }
+        public Dictionary<int, int> RatingDistribution { get; set; } = new();
+
+        public int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
+        public bool HasPreviousPage => PageNumber > 1;
+        public bool HasNextPage => PageNumber < TotalPages;
+    }
+
+    public class CreateReviewRequest
+    {
+        [Required]
+        public int ProductId { get; set; }
+
+        [Required]
+        [StringLength(1000, ErrorMessage = "評價內容不能超過1000字")]
+        public string Content { get; set; } = string.Empty;
+
+        [Required]
+        [Range(1, 5, ErrorMessage = "評分必須在1-5星之間")]
+        public int Rating { get; set; }
+
+        public IFormFile? ImageFile { get; set; }
+    }
+
+    public class ReportReviewRequest
+    {
+        [Required]
+        public int ReviewId { get; set; }
+
+        [Required]
+        [StringLength(100, ErrorMessage = "檢舉原因不能超過100字")]
+        public string Reason { get; set; } = string.Empty;
+
+        [StringLength(500, ErrorMessage = "詳細描述不能超過500字")]
+        public string? Description { get; set; }
+
+        public bool Harassment { get; set; } = false;
+        public bool Pornography { get; set; } = false;
+        public bool Threaten { get; set; } = false;
+        public bool Hatred { get; set; } = false;
     }
 }
