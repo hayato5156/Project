@@ -36,7 +36,7 @@ public class OrdersAdminController : ControllerBase
         }
         var totalCount = query.Count();
         var result = query
-            .OrderByDescending(o => o.OrderDate)
+            .OrderByDescending(o => o.OrderDate)// 按訂單日期排序（最新的先）
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(o => new

@@ -28,6 +28,7 @@ namespace ECommercePlatform.Controllers
             var totalItems = await query.CountAsync();
             var users = await query
                 .OrderByDescending(u => u.CreatedAt)
+                .OrderBy(u => u.Id)// ¥[¤W±Æ§Ç
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

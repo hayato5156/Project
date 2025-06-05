@@ -76,13 +76,13 @@
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\ECommercePlatform.1zen4z7b14.bundle.scp.css'))</AssetFile>
       <Selectors><![CDATA[[]]]></Selectors>
       <EndpointProperties><![CDATA[[{"Name":"fingerprint","Value":"1zen4z7b14"},{"Name":"integrity","Value":"sha256-czTtuwcvK\u002BbtAXMEECVIquDzfwsA9D1gdeO7ke5gTak="},{"Name":"label","Value":"_content/ECommercePlatform/ECommercePlatform.bundle.scp.css"}]]]></EndpointProperties>
-      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"1135"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022czTtuwcvK\u002BbtAXMEECVIquDzfwsA9D1gdeO7ke5gTak=\u0022"},{"Name":"Last-Modified","Value":"Wed, 04 Jun 2025 19:03:01 GMT"}]]]></ResponseHeaders>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"1135"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022czTtuwcvK\u002BbtAXMEECVIquDzfwsA9D1gdeO7ke5gTak=\u0022"},{"Name":"Last-Modified","Value":"Thu, 05 Jun 2025 07:22:55 GMT"}]]]></ResponseHeaders>
     </StaticWebAssetEndpoint>
     <StaticWebAssetEndpoint Include="_content/ECommercePlatform/ECommercePlatform.bundle.scp.css">
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\ECommercePlatform.1zen4z7b14.bundle.scp.css'))</AssetFile>
       <Selectors><![CDATA[[]]]></Selectors>
       <EndpointProperties><![CDATA[[{"Name":"integrity","Value":"sha256-czTtuwcvK\u002BbtAXMEECVIquDzfwsA9D1gdeO7ke5gTak="}]]]></EndpointProperties>
-      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"no-cache"},{"Name":"Content-Length","Value":"1135"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022czTtuwcvK\u002BbtAXMEECVIquDzfwsA9D1gdeO7ke5gTak=\u0022"},{"Name":"Last-Modified","Value":"Wed, 04 Jun 2025 19:03:01 GMT"}]]]></ResponseHeaders>
+      <ResponseHeaders><![CDATA[[{"Name":"Accept-Ranges","Value":"bytes"},{"Name":"Cache-Control","Value":"no-cache"},{"Name":"Content-Length","Value":"1135"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022czTtuwcvK\u002BbtAXMEECVIquDzfwsA9D1gdeO7ke5gTak=\u0022"},{"Name":"Last-Modified","Value":"Thu, 05 Jun 2025 07:22:55 GMT"}]]]></ResponseHeaders>
     </StaticWebAssetEndpoint>
     <StaticWebAssetEndpoint Include="_content/ECommercePlatform/engineer-login.286w0015y1.html">
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\engineer-login.html'))</AssetFile>

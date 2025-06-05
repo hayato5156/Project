@@ -38,7 +38,7 @@ namespace ECommercePlatform.Data
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
             });
 
-            // Review 配置
+            // Review 配置 - 在 OnModelCreating 方法中替換原有的 Review 配置
             modelBuilder.Entity<Review>(entity =>
             {
                 entity.HasKey(e => e.Id);
@@ -53,8 +53,9 @@ namespace ECommercePlatform.Data
                       .HasForeignKey(e => e.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
 
+                // 🔧 修復：指定 Product.Reviews 導航屬性
                 entity.HasOne(e => e.Product)
-                      .WithMany() // 假設 Product 沒有 Reviews 導航屬性
+                      .WithMany(p => p.Reviews) // 正確指定反向導航，而非空的 WithMany()
                       .HasForeignKey(e => e.ProductId)
                       .OnDelete(DeleteBehavior.Cascade);
 
@@ -124,7 +125,7 @@ namespace ECommercePlatform.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // OrderItem 配置
+            // OrderItem 配置 - 修復導航屬性
             modelBuilder.Entity<OrderItem>(entity =>
             {
                 entity.HasKey(e => e.Id);
@@ -135,13 +136,14 @@ namespace ECommercePlatform.Data
                       .HasForeignKey(e => e.OrderId)
                       .OnDelete(DeleteBehavior.Cascade);
 
+                // 🔧 修復：指定 Product.OrderItems 導航屬性
                 entity.HasOne(e => e.Product)
-                      .WithMany()
+                      .WithMany(p => p.OrderItems) // 正確指定反向導航
                       .HasForeignKey(e => e.ProductId)
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // CartItem 配置
+            // CartItem 配置 - 修復導航屬性
             modelBuilder.Entity<CartItem>(entity =>
             {
                 entity.HasKey(e => e.Id);
@@ -151,8 +153,9 @@ namespace ECommercePlatform.Data
                       .HasForeignKey(e => e.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
 
+                // 🔧 修復：指定 Product.CartItems 導航屬性
                 entity.HasOne(e => e.Product)
-                      .WithMany()
+                      .WithMany(p => p.CartItems) // 正確指定反向導航
                       .HasForeignKey(e => e.ProductId)
                       .OnDelete(DeleteBehavior.Cascade);
 
@@ -171,15 +174,15 @@ namespace ECommercePlatform.Data
                 }
             });
 
-            // OperationLog 配置
+            // OperationLog 配置 - 修復導航屬性
             modelBuilder.Entity<OperationLog>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
-                // 配置可選的 Engineer 關係
+                // 🔧 修復：指定 Engineer.OperationLogs 導航屬性
                 entity.HasOne(e => e.Engineer)
-                      .WithMany()
+                      .WithMany(eng => eng.OperationLogs) // 正確指定反向導航
                       .HasForeignKey(e => e.EngineerId)
                       .OnDelete(DeleteBehavior.SetNull)
                       .IsRequired(false);
@@ -212,7 +215,6 @@ namespace ECommercePlatform.Data
                 new Product { Id = 1, Name = "Laptop", Description = "High performance laptop", Price = 1500.00m, ImageUrl = "laptop.jpg" },
                 new Product { Id = 2, Name = "Smartphone", Description = "Latest model smartphone", Price = 799.99m, ImageUrl = "smartphone.jpg" }
             );
-
             // 可根據需要新增更多資料
         }
     }

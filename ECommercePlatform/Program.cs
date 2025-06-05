@@ -56,6 +56,15 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+    // 確保資料庫存在並執行遷移
+    context.Database.EnsureCreated();
+    // 初始化種子資料
+    DbInitializer.Seed(context);
+}
 // 預設路由
 app.MapControllerRoute(
     name: "default",
