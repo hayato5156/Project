@@ -1,65 +1,267 @@
-@model IEnumerable<ECommercePlatform.Models.Review>
+@model ECommercePlatform.Controllers.ReviewListViewModel
 
 @{
     ViewData["Title"] = "商品評價";
+    var currentSort = ViewBag.Sort?.ToString() ?? "latest";
+    var currentKeyword = ViewBag.Keyword?.ToString() ?? "";
+    var currentScoreFilter = ViewBag.ScoreFilter?.ToString() ?? "";
+    var productId = ViewBag.ProductId;
 }
 
 <div class="container">
     <h2 class="mb-4">📋 商品評價列表</h2>
 
+    <!-- 篩選表單 -->
     <div class="row mb-3">
-        <div class="col-md-6">
+        <div class="col-12">
+            <form method="get" class="row g-3">
+                @if (productId != null)
+                {
+                    <input type="hidden" name="productId" value="@productId" />
+                }
+                
+                <!-- 關鍵字搜尋 -->
+                <div class="col-md-4">
+                    <label class="form-label">關鍵字搜尋</label>
+                    <div class="input-group">
+                        <input type="text" name="keyword" class="form-control" placeholder="搜尋評價內容..." value="@currentKeyword" />
+                        <button type="submit" class="btn btn-outline-secondary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 評分篩選 -->
+                <div class="col-md-3">
+                    <label class="form-label">評分篩選</label>
+                    <select name="scoreFilter" class="form-select">
+                        <option value="">全部評分</option>
+                        @{
+                            var scores = new Dictionary<string, string>
+                            {
+                                {"5", "5星 ★★★★★"},
+                                {"4", "4星 ★★★★☆"},
+                                {"3", "3星 ★★★☆☆"},
+                                {"2", "2星 ★★☆☆☆"},
+                                {"1", "1星 ★☆☆☆☆"}
+                            };
+                        }
+                        @foreach (var score in scores)
+                        {
+                            <option value="@score.Key" @(currentScoreFilter == score.Key ? "selected" : "")>@score.Value</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- 排序方式 -->
+                <div class="col-md-3">
+                    <label class="form-label">排序方式</label>
+                    <select name="sort" class="form-select">
+                        @{
+                            var sortOptions = new Dictionary<string, string>
+                            {
+                                {"latest", "最新優先"},
+                                {"oldest", "最舊優先"},
+                                {"highscore", "高分優先"},
+                                {"lowscore", "低分優先"},
+                                {"helpful", "最有用"}
+                            };
+                        }
+                        @foreach (var sortOption in sortOptions)
+                        {
+                            <option value="@sortOption.Key" @(currentSort == sortOption.Key ? "selected" : "")>@sortOption.Value</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- 清除篩選 -->
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <a href="@(productId != null ? $"/Review/Index?productId={productId}" : "/Review/Index")" 
+                       class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-undo me-1"></i>清除
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 統計資訊 -->
+    <div class="row mb-3">
+        <div class="col-md-8">
             <p class="text-muted">
-                📝 總留言數：<strong>@(Model?.Count() ?? 0)</strong> |
-                ⭐ 平均評分：<strong>@(Model?.Any() == true ? Model.Average(r => r.Rating).ToString("0.0") : "0.0")</strong>
+                📝 總留言數：<strong>@(Model?.TotalReviews ?? 0)</strong>
+                @if (Model?.AverageScore > 0)
+                {
+                    <span class="ms-3">
+                        | ⭐ 平均評分：<strong>@Model.AverageScore.ToString("0.0")</strong>
+                        <span class="text-warning">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                @(i <= Math.Round(Model.AverageScore) ? "★" : "☆")
+                            }
+                        </span>
+                    </span>
+                }
             </p>
         </div>
         @if (User.Identity?.IsAuthenticated == true)
         {
-            <div class="col-md-6 text-end">
+            <div class="col-md-4 text-end">
                 <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addReviewModal">
                     ✍️ 新增評價
                 </button>
             </div>
         }
+        else
+        {
+            <div class="col-md-4 text-end">
+                <a asp-controller="Account" asp-action="Login" class="btn btn-outline-primary">
+                    🔑 登入後評價
+                </a>
+            </div>
+        }
     </div>
 
     <!-- 評價列表 -->
-    <div class="row" id="messageResult">
-        @if (Model != null && Model.Any())
+    <div class="row" id="reviewsContainer">
+        @if (Model?.Reviews != null && Model.Reviews.Any())
         {
-            @foreach (var review in Model)
+            @foreach (var review in Model.Reviews)
             {
                 <div class="col-md-6 mb-4">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                            <strong>@(review.UserName ?? review.User?.Username ?? "匿名用戶")</strong>
-                            <div>
-                                <span class="text-warning">
-                                    @for (int s = 1; s <= 5; s++)
-                                    {
-                                        if (s <= review.Rating)
-                                        {
-                                            <text>★</text>
-                                        }
-                                        else
-                                        {
-                                            <text>☆</text>
-                                        }
-                                    }
+                    <div class="card h-100 shadow-sm review-card">
+                        @* 置頂標籤 *@
+                        @if (review.IsPinned)
+                        {
+                            <div class="position-absolute top-0 end-0">
+                                <span class="badge bg-warning text-dark" style="margin: 8px;">
+                                    <i class="fas fa-thumbtack me-1"></i>置頂
                                 </span>
                             </div>
+                        }
+
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>@(review.UserName ?? review.User?.Username ?? "匿名用戶")</strong>
+                                <div class="small text-muted">@review.CreatedAt.ToString("yyyy-MM-dd HH:mm")</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="text-warning fs-5">
+                                    @for (int s = 1; s <= 5; s++)
+                                    {
+                                        @(s <= review.Rating ? "★" : "☆")
+                                    }
+                                </div>
+                                <div class="small text-muted">@review.RatingText</div>
+                            </div>
                         </div>
+
                         <div class="card-body">
-                            <p>@review.Content</p>
-                            @if (review.ImageData != null)
+                            <p class="card-text">@review.Content</p>
+                            
+                            @* 評價圖片 *@
+                            @if (review.HasImage)
                             {
-                                <img src="/reviews/image/@review.Id"
-                                     class="img-fluid rounded" alt="評價圖片" style="max-height: 200px;" />
+                                <div class="mb-3">
+                                    <img src="/reviews/image/@review.Id"
+                                         class="img-fluid rounded shadow-sm" 
+                                         alt="評價圖片" 
+                                         style="max-height: 200px; cursor: pointer;"
+                                         onclick="showImageModal('/reviews/image/@review.Id')" />
+                                </div>
+                            }
+
+                            @* 管理員回覆 *@
+                            @if (review.HasAdminReply)
+                            {
+                                <div class="admin-reply bg-info bg-opacity-10 p-3 rounded mt-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fas fa-user-shield text-info me-2"></i>
+                                        <strong class="text-info">官方回覆</strong>
+                                        <small class="text-muted ms-auto">@review.AdminReplyTime?.ToString("MM-dd HH:mm")</small>
+                                    </div>
+                                    <p class="mb-0 small">@review.AdminReply</p>
+                                </div>
                             }
                         </div>
-                        <div class="card-footer small text-muted">
-                            <span>評價時間：@review.CreatedAt.ToString("yyyy-MM-dd HH:mm")</span>
+
+                        <div class="card-footer d-flex justify-content-between align-items-center">
+                            <!-- 有用性投票 -->
+                            <div class="helpful-votes">
+                                @if (User.Identity?.IsAuthenticated == true)
+                                {
+                                    <button class="btn btn-sm btn-outline-success me-2 vote-helpful" 
+                                            data-review-id="@review.Id" data-helpful="true">
+                                        <i class="fas fa-thumbs-up me-1"></i>@review.HelpfulCount
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary vote-helpful" 
+                                            data-review-id="@review.Id" data-helpful="false">
+                                        <i class="fas fa-thumbs-down me-1"></i>@review.UnhelpfulCount
+                                    </button>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">
+                                        <i class="fas fa-thumbs-up text-success me-1"></i>@review.HelpfulCount
+                                        <i class="fas fa-thumbs-down text-secondary ms-3 me-1"></i>@review.UnhelpfulCount
+                                    </span>
+                                }
+                            </div>
+
+                            <!-- 操作按鈕 -->
+                            @if (User.Identity?.IsAuthenticated == true)
+                            {
+                                var userId = int.Parse(User.Claims.First(c => c.Type == "UserId").Value);
+                                var userRole = User.Claims.FirstOrDefault(c => c.Type == "UserRole")?.Value ?? "";
+                                
+                                <div class="action-buttons">
+                                    @* 檢舉按鈕 *@
+                                    @if (review.UserId != userId)
+                                    {
+                                        <button class="btn btn-sm btn-outline-warning me-1 report-review" 
+                                                data-review-id="@review.Id" title="檢舉">
+                                            <i class="fas fa-flag"></i>
+                                        </button>
+                                    }
+                                    
+                                    @* 編輯/刪除按鈕 *@
+                                    @if (review.UserId == userId || userRole == "Admin" || userRole == "Engineer")
+                                    {
+                                        @if (review.UserId == userId)
+                                        {
+                                            <button class="btn btn-sm btn-outline-primary me-1 edit-review" 
+                                                    data-review-id="@review.Id"
+                                                    data-content="@review.Content"
+                                                    data-rating="@review.Rating" title="編輯">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        }
+                                        
+                                        <button class="btn btn-sm btn-outline-danger delete-review" 
+                                                data-review-id="@review.Id" title="刪除">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    }
+                                    
+                                    @* 管理員專用按鈕 *@
+                                    @if (userRole == "Admin" || userRole == "Engineer")
+                                    {
+                                        @if (!review.HasAdminReply)
+                                        {
+                                            <button class="btn btn-sm btn-outline-info ms-1 admin-reply" 
+                                                    data-review-id="@review.Id" title="回覆">
+                                                <i class="fas fa-reply"></i>
+                                            </button>
+                                        }
+                                        
+                                        <button class="btn btn-sm @(review.IsPinned ? "btn-warning" : "btn-outline-warning") ms-1 toggle-pin" 
+                                                data-review-id="@review.Id" title="@(review.IsPinned ? "取消置頂" : "置頂")">
+                                            <i class="fas fa-thumbtack"></i>
+                                        </button>
+                                    }
+                                </div>
+                            }
                         </div>
                     </div>
                 </div>
@@ -68,39 +270,93 @@
         else
         {
             <div class="col-12">
-                <div class="alert alert-info text-center">
+                <div class="alert alert-info text-center py-5">
+                    <div class="mb-3">
+                        <i class="fas fa-comments" style="font-size: 3rem; color: #0dcaf0;"></i>
+                    </div>
                     <h5>📭 目前沒有評價</h5>
-                    <p>成為第一個評價的人吧！</p>
+                    <p class="mb-3">
+                        @if (ViewBag.ProductName != null)
+                        {
+                            <span>還沒有人評價這個商品，成為第一個評價的人吧！</span>
+                        }
+                        else
+                        {
+                            <span>目前沒有符合條件的評價，試試調整篩選條件。</span>
+                        }
+                    </p>
                     @if (User.Identity?.IsAuthenticated == true)
                     {
                         <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addReviewModal">
-                            立即評價
+                            <i class="fas fa-star me-1"></i>寫第一個評價
                         </button>
                     }
                     else
                     {
-                        <a asp-controller="Account" asp-action="Login" class="btn btn-primary">登入後評價</a>
+                        <a asp-controller="Account" asp-action="Login" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt me-1"></i>登入後評價
+                        </a>
                     }
                 </div>
             </div>
         }
     </div>
+
+    <!-- 分頁 -->
+    @if (Model != null && Model.TotalPages > 1)
+    {
+        <nav aria-label="評價分頁" class="mt-4">
+            <ul class="pagination justify-content-center">
+                @if (Model.HasPreviousPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="?page=@(Model.PageNumber - 1)&sort=@currentSort&keyword=@currentKeyword&scoreFilter=@currentScoreFilter@(productId != null ? $"&productId={productId}" : "")">
+                            <i class="fas fa-chevron-left me-1"></i>上一頁
+                        </a>
+                    </li>
+                }
+
+                @{
+                    var startPage = Math.Max(1, Model.PageNumber - 2);
+                    var endPage = Math.Min(Model.TotalPages, Model.PageNumber + 2);
+                }
+
+                @for (var i = startPage; i <= endPage; i++)
+                {
+                    <li class="page-item @(Model.PageNumber == i ? "active" : "")">
+                        <a class="page-link" href="?page=@i&sort=@currentSort&keyword=@currentKeyword&scoreFilter=@currentScoreFilter@(productId != null ? $"&productId={productId}" : "")">@i</a>
+                    </li>
+                }
+
+                @if (Model.HasNextPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="?page=@(Model.PageNumber + 1)&sort=@currentSort&keyword=@currentKeyword&scoreFilter=@currentScoreFilter@(productId != null ? $"&productId={productId}" : "")">
+                            下一頁<i class="fas fa-chevron-right ms-1"></i>
+                        </a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
 </div>
 
-@* 新增評價模態框 *@
+<!-- 新增評價模態框 -->
 @if (User.Identity?.IsAuthenticated == true)
 {
-    <div class="modal fade" id="addReviewModal" tabindex="-1">
+    <div class="modal fade" id="addReviewModal" tabindex="-1" aria-labelledby="addReviewModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">新增評價</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="addReviewModalLabel">
+                        <i class="fas fa-star me-2"></i>新增評價
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="addReviewForm" enctype="multipart/form-data">
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label class="form-label">評分：</label>
+                            <label class="form-label fw-bold">評分：</label>
                             <select name="rating" class="form-select" required>
                                 <option value="">請選擇評分</option>
                                 <option value="5">⭐⭐⭐⭐⭐ 非常滿意</option>
@@ -111,21 +367,30 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">評價內容：</label>
-                            <textarea name="content" class="form-control" rows="4" placeholder="請描述您的使用體驗..." required></textarea>
+                            <label class="form-label fw-bold">評價內容：</label>
+                            <textarea name="content" class="form-control" rows="4" 
+                                      placeholder="請詳細描述您的使用體驗，幫助其他買家做出更好的選擇..." 
+                                      required minlength="10" maxlength="1000"></textarea>
+                            <div class="form-text">請至少輸入10個字，最多1000字</div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">產品ID：</label>
-                            <input type="number" name="productId" class="form-control" value="1" required />
+                            <label class="form-label fw-bold">商品ID：</label>
+                            <input type="number" name="productId" class="form-control" value="@(productId ?? 1)" required />
+                            <div class="form-text">請確認商品ID正確</div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">上傳圖片（可選）：</label>
+                            <label class="form-label fw-bold">上傳圖片（選填）：</label>
                             <input type="file" name="imageFile" class="form-control" accept="image/*" />
+                            <div class="form-text">支援 JPG、PNG、GIF 格式，檔案大小不超過 5MB</div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                        <button type="submit" class="btn btn-success">提交評價</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>取消
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-paper-plane me-1"></i>提交評價
+                        </button>
                     </div>
                 </form>
             </div>
@@ -133,32 +398,157 @@
     </div>
 }
 
+<!-- 圖片檢視模態框 -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">評價圖片</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid" alt="評價圖片" />
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
-        // 新增評價
-        $('#addReviewForm').submit(function(e) {
-            e.preventDefault();
+        $(document).ready(function() {
+            // 自動提交表單當選項改變
+            $('select[name="scoreFilter"], select[name="sort"]').change(function() {
+                $(this).closest('form').submit();
+            });
 
-            const formData = new FormData(this);
+            // 新增評價
+            $('#addReviewForm').submit(function(e) {
+                e.preventDefault();
 
-            $.ajax({
-                url: '@Url.Action("Create", "Review")',
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(result) {
-                    if (result.success) {
-                        $('#addReviewModal').modal('hide');
-                        location.reload();
-                    } else {
-                        alert(result.message || '提交失敗');
+                const formData = new FormData(this);
+                const submitBtn = $(this).find('button[type="submit"]');
+                const originalText = submitBtn.html();
+
+                // 表單驗證
+                const content = $('textarea[name="content"]').val().trim();
+                if (content.length < 10) {
+                    alert('評價內容至少需要10個字');
+                    return;
+                }
+
+                submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>提交中...');
+
+                $.ajax({
+                    url: '@Url.Action("Create", "Review")',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(result) {
+                        if (result.success) {
+                            $('#addReviewModal').modal('hide');
+                            alert('✅ ' + (result.message || '評價新增成功！感謝您的回饋'));
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            alert('❌ ' + (result.message || '提交失敗'));
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('提交錯誤:', xhr);
+                        alert('❌ 提交失敗，請稍後重試');
+                    },
+                    complete: function() {
+                        submitBtn.prop('disabled', false).html(originalText);
                     }
-                },
-                error: function() {
-                    alert('提交失敗，請稍後重試');
+                });
+            });
+
+            // 有用性投票
+            $(document).on('click', '.vote-helpful', function() {
+                const reviewId = $(this).data('review-id');
+                const isHelpful = $(this).data('helpful');
+                
+                $.ajax({
+                    url: '@Url.Action("VoteHelpful", "Review")',
+                    type: 'POST',
+                    data: { reviewId: reviewId, isHelpful: isHelpful },
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(result) {
+                        if (result.success) {
+                            // 更新投票數
+                            const card = $(`.vote-helpful[data-review-id="${reviewId}"]`).closest('.card');
+                            card.find('.vote-helpful[data-helpful="true"]').html(`<i class="fas fa-thumbs-up me-1"></i>${result.helpfulCount}`);
+                            card.find('.vote-helpful[data-helpful="false"]').html(`<i class="fas fa-thumbs-down me-1"></i>${result.unhelpfulCount}`);
+                            
+                            alert(isHelpful ? '✅ 感謝您的反饋！' : '✅ 感謝您的反饋！');
+                        } else {
+                            alert('❌ ' + (result.message || '操作失敗'));
+                        }
+                    },
+                    error: function() {
+                        alert('❌ 操作失敗，請稍後重試');
+                    }
+                });
+            });
+
+            // 刪除評價
+            $(document).on('click', '.delete-review', function() {
+                if (confirm('確定要刪除這個評價嗎？此操作無法復原。')) {
+                    const reviewId = $(this).data('review-id');
+                    
+                    $.ajax({
+                        url: '@Url.Action("Delete", "Review")',
+                        type: 'POST',
+                        data: { reviewId: reviewId },
+                        headers: {
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function(result) {
+                            if (result.success) {
+                                alert('✅ ' + (result.message || '評價已刪除'));
+                                location.reload();
+                            } else {
+                                alert('❌ ' + (result.message || '刪除失敗'));
+                            }
+                        },
+                        error: function() {
+                            alert('❌ 刪除失敗，請稍後重試');
+                        }
+                    });
                 }
             });
         });
+
+        // 顯示圖片模態框
+        function showImageModal(imageSrc) {
+            $('#modalImage').attr('src', imageSrc);
+            $('#imageModal').modal('show');
+        }
     </script>
+
+    <style>
+        .review-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .review-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .admin-reply {
+            border-left: 4px solid #0dcaf0;
+        }
+
+        .helpful-votes .btn {
+            font-size: 0.875rem;
+        }
+
+        .action-buttons .btn {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+    </style>
 }

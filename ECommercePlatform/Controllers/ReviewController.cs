@@ -13,22 +13,20 @@ namespace ECommercePlatform.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
-        private readonly OperationLogService _log; // 注意：這裡是 _log，不是 _logService
+        private readonly OperationLogService _log;
 
         public ReviewController(ApplicationDbContext context, EmailService emailService, OperationLogService log)
         {
             _context = context;
             _emailService = emailService;
-            _log = log; // 修正：使用 _log
+            _log = log;
         }
 
-        //評價列表頁面（完全使用 EF Core + Review 模型）
+        // 評價列表頁面（改善分頁和篩選）
         [HttpGet]
         public async Task<IActionResult> Index(int? productId = null, string sort = "latest",
-            string keyword = "", int? scoreFilter = null, int page = 1)
+            string keyword = "", int? scoreFilter = null, int page = 1, int pageSize = 12)
         {
-            const int pageSize = 10;
-
             try
             {
                 var query = _context.Reviews
@@ -43,13 +41,15 @@ namespace ECommercePlatform.Controllers
                     query = query.Where(r => r.ProductId == productId.Value);
                     var product = await _context.Products.FindAsync(productId.Value);
                     ViewBag.ProductName = product?.Name;
+                    ViewBag.ProductId = productId;
                 }
 
                 // 關鍵字搜尋
                 if (!string.IsNullOrEmpty(keyword))
                 {
                     query = query.Where(r => r.Content.Contains(keyword) ||
-                                       r.Product.Name.Contains(keyword));
+                                       r.Product.Name.Contains(keyword) ||
+                                       (r.UserName != null && r.UserName.Contains(keyword)));
                 }
 
                 // 評分篩選
@@ -61,11 +61,12 @@ namespace ECommercePlatform.Controllers
                 // 排序
                 query = sort switch
                 {
-                    "latest" => query.OrderByDescending(r => r.CreatedAt),
-                    "oldest" => query.OrderBy(r => r.CreatedAt),
-                    "highscore" => query.OrderByDescending(r => r.Rating).ThenByDescending(r => r.CreatedAt),
-                    "lowscore" => query.OrderBy(r => r.Rating).ThenByDescending(r => r.CreatedAt),
-                    _ => query.OrderByDescending(r => r.CreatedAt)
+                    "latest" => query.OrderByDescending(r => r.IsPinned).ThenByDescending(r => r.CreatedAt),
+                    "oldest" => query.OrderByDescending(r => r.IsPinned).ThenBy(r => r.CreatedAt),
+                    "highscore" => query.OrderByDescending(r => r.IsPinned).ThenByDescending(r => r.Rating).ThenByDescending(r => r.CreatedAt),
+                    "lowscore" => query.OrderByDescending(r => r.IsPinned).ThenBy(r => r.Rating).ThenByDescending(r => r.CreatedAt),
+                    "helpful" => query.OrderByDescending(r => r.IsPinned).ThenByDescending(r => r.HelpfulCount).ThenByDescending(r => r.CreatedAt),
+                    _ => query.OrderByDescending(r => r.IsPinned).ThenByDescending(r => r.CreatedAt)
                 };
 
                 var totalItems = await query.CountAsync();
@@ -89,7 +90,11 @@ namespace ECommercePlatform.Controllers
                     AverageScore = allReviews.Any() ? allReviews.Average(r => r.Rating) : 0,
                     RatingDistribution = allReviews
                         .GroupBy(r => r.Rating)
-                        .ToDictionary(g => g.Key, g => g.Count())
+                        .ToDictionary(g => g.Key, g => g.Count()),
+                    // 新增統計
+                    RecentReviewsCount = allReviews.Count(r => r.CreatedAt >= DateTime.UtcNow.AddDays(-7)),
+                    WithImagesCount = allReviews.Count(r => r.HasImage),
+                    WithAdminReplyCount = allReviews.Count(r => r.HasAdminReply)
                 };
 
                 // 保存篩選參數
@@ -97,6 +102,14 @@ namespace ECommercePlatform.Controllers
                 ViewBag.Sort = sort;
                 ViewBag.Keyword = keyword;
                 ViewBag.ScoreFilter = scoreFilter;
+                ViewBag.PageSize = pageSize;
+
+                // 獲取可評價的商品列表（已購買但未評價）
+                if (User.Identity?.IsAuthenticated == true)
+                {
+                    var userId = int.Parse(User.Claims.First(c => c.Type == "UserId").Value);
+                    ViewBag.PurchasedProducts = await GetPurchasedProductsForReview(userId);
+                }
 
                 // 支援 AJAX 請求
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -108,12 +121,12 @@ namespace ECommercePlatform.Controllers
             }
             catch (Exception ex)
             {
-                _log.Log("Review", "IndexError", "", ex.Message); // 修正：使用 _log
+                _log.Log("Review", "IndexError", "", ex.Message);
                 return View(new ReviewListViewModel());
             }
         }
 
-        //新增評價（只支援 Review 模型）
+        // 新增評價（改善驗證和錯誤處理）
         [HttpPost]
         [Authorize(AuthenticationSchemes = "UserCookie")]
         [ValidateAntiForgeryToken]
@@ -123,11 +136,22 @@ namespace ECommercePlatform.Controllers
             {
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(ModelState);
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+                    return Json(new { success = false, message = "輸入資料有誤", errors = errors });
                 }
 
                 var userId = int.Parse(User.Claims.First(c => c.Type == "UserId").Value);
                 var userName = User.Identity?.Name ?? "";
+
+                // 檢查商品是否存在
+                var product = await _context.Products.FindAsync(request.ProductId);
+                if (product == null || !product.IsActive)
+                {
+                    return Json(new { success = false, message = "商品不存在或已下架" });
+                }
 
                 // 檢查是否已經評價過
                 var existingReview = await _context.Reviews
@@ -135,10 +159,10 @@ namespace ECommercePlatform.Controllers
 
                 if (existingReview != null)
                 {
-                    return Json(new { success = false, message = "您已經評價過此商品" });
+                    return Json(new { success = false, message = "您已經評價過此商品，每個商品只能評價一次" });
                 }
 
-                // 檢查是否有購買記錄（可選）
+                // 檢查是否有購買記錄
                 var hasPurchased = await _context.OrderItems
                     .Include(oi => oi.Order)
                     .AnyAsync(oi => oi.ProductId == request.ProductId &&
@@ -150,24 +174,32 @@ namespace ECommercePlatform.Controllers
                     return Json(new { success = false, message = "只有購買過的商品才能評價" });
                 }
 
-                // 處理圖片上傳
+                // 處理圖片上傳（改善驗證）
                 byte[]? imageData = null;
+                string? imageFileName = null;
+                string? imageContentType = null;
+
                 if (request.ImageFile != null && request.ImageFile.Length > 0)
                 {
-                    if (request.ImageFile.Length > 5 * 1024 * 1024) // 5MB 限制
+                    // 檔案大小限制（5MB）
+                    if (request.ImageFile.Length > 5 * 1024 * 1024)
                     {
                         return Json(new { success = false, message = "圖片檔案不能超過 5MB" });
                     }
 
-                    var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif" };
+                    // 檔案類型驗證
+                    var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp" };
                     if (!allowedTypes.Contains(request.ImageFile.ContentType.ToLower()))
                     {
-                        return Json(new { success = false, message = "只允許上傳 JPG、PNG 或 GIF 格式的圖片" });
+                        return Json(new { success = false, message = "只允許上傳 JPG、PNG、GIF、WebP 格式的圖片" });
                     }
 
+                    // 讀取圖片數據
                     using var ms = new MemoryStream();
                     await request.ImageFile.CopyToAsync(ms);
                     imageData = ms.ToArray();
+                    imageFileName = request.ImageFile.FileName;
+                    imageContentType = request.ImageFile.ContentType;
                 }
 
                 // 創建評價
@@ -176,9 +208,11 @@ namespace ECommercePlatform.Controllers
                     UserId = userId,
                     ProductId = request.ProductId,
                     UserName = userName,
-                    Content = request.Content,
+                    Content = request.Content.Trim(),
                     Rating = request.Rating,
                     ImageData = imageData,
+                    ImageFileName = imageFileName,
+                    ImageContentType = imageContentType,
                     CreatedAt = DateTime.UtcNow,
                     IsVisible = true
                 };
@@ -186,24 +220,38 @@ namespace ECommercePlatform.Controllers
                 _context.Reviews.Add(review);
                 await _context.SaveChangesAsync();
 
-                _log.Log("Review", "Create", review.Id.ToString(), // 修正：使用 _log
-                    $"新增評價：{request.Rating}星，商品ID: {request.ProductId}");
+                _log.Log("Review", "Create", review.Id.ToString(),
+                    $"新增評價：{request.Rating}星，商品: {product.Name}");
+
+                // 發送評價通知給管理員（可選）
+                try
+                {
+                    await _emailService.SendComplainMailAsync(
+                        "新商品評價通知",
+                        $"用戶 {userName} 對商品 {product.Name} 給予 {request.Rating} 星評價");
+                }
+                catch (Exception ex)
+                {
+                    _log.Log("Review", "EmailError", review.Id.ToString(), ex.Message);
+                }
 
                 return Json(new
                 {
                     success = true,
-                    message = "評價新增成功",
-                    reviewId = review.Id
+                    message = "評價新增成功！感謝您的回饋",
+                    reviewId = review.Id,
+                    rating = review.Rating,
+                    userName = review.DisplayUserName
                 });
             }
             catch (Exception ex)
             {
-                _log.Log("Review", "CreateError", "", ex.Message); // 修正：使用 _log
+                _log.Log("Review", "CreateError", "", ex.Message);
                 return Json(new { success = false, message = "新增評價失敗，請稍後重試" });
             }
         }
 
-        //更新評價
+        // 更新評價
         [HttpPost]
         [Authorize(AuthenticationSchemes = "UserCookie")]
         [ValidateAntiForgeryToken]
@@ -220,7 +268,17 @@ namespace ECommercePlatform.Controllers
                     return Json(new { success = false, message = "評價不存在或無權限修改" });
                 }
 
-                review.Content = content;
+                if (rating < 1 || rating > 5)
+                {
+                    return Json(new { success = false, message = "評分必須在1-5星之間" });
+                }
+
+                if (string.IsNullOrWhiteSpace(content) || content.Length > 1000)
+                {
+                    return Json(new { success = false, message = "評價內容長度必須在1-1000字之間" });
+                }
+
+                review.Content = content.Trim();
                 review.Rating = rating;
                 review.UpdatedAt = DateTime.UtcNow;
 
@@ -237,7 +295,7 @@ namespace ECommercePlatform.Controllers
             }
         }
 
-        //刪除評價
+        // 刪除評價
         [HttpPost]
         [Authorize(AuthenticationSchemes = "UserCookie")]
         [ValidateAntiForgeryToken]
@@ -274,7 +332,126 @@ namespace ECommercePlatform.Controllers
             }
         }
 
-        //檢舉評價
+        // 評價有用性投票
+        [HttpPost]
+        [Authorize(AuthenticationSchemes = "UserCookie")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VoteHelpful(int reviewId, bool isHelpful)
+        {
+            try
+            {
+                var review = await _context.Reviews.FindAsync(reviewId);
+                if (review == null)
+                {
+                    return Json(new { success = false, message = "評價不存在" });
+                }
+
+                if (isHelpful)
+                {
+                    review.HelpfulCount++;
+                }
+                else
+                {
+                    review.UnhelpfulCount++;
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    helpfulCount = review.HelpfulCount,
+                    unhelpfulCount = review.UnhelpfulCount,
+                    helpfulPercentage = review.HelpfulPercentage
+                });
+            }
+            catch (Exception ex)
+            {
+                _log.Log("Review", "VoteError", reviewId.ToString(), ex.Message);
+                return Json(new { success = false, message = "投票失敗" });
+            }
+        }
+
+        // 管理員回覆評價
+        [HttpPost]
+        [Authorize(AuthenticationSchemes = "EngineerCookie")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AdminReply(int reviewId, string reply)
+        {
+            try
+            {
+                var review = await _context.Reviews.FindAsync(reviewId);
+                if (review == null)
+                {
+                    return Json(new { success = false, message = "評價不存在" });
+                }
+
+                if (string.IsNullOrWhiteSpace(reply) || reply.Length > 500)
+                {
+                    return Json(new { success = false, message = "回覆內容長度必須在1-500字之間" });
+                }
+
+                var adminName = User.Identity?.Name ?? "管理員";
+
+                review.AdminReply = reply.Trim();
+                review.AdminReplyTime = DateTime.UtcNow;
+                review.AdminRepliedBy = adminName;
+
+                await _context.SaveChangesAsync();
+
+                _log.Log("Review", "AdminReply", reviewId.ToString(), $"管理員回覆評價: {adminName}");
+
+                return Json(new
+                {
+                    success = true,
+                    message = "回覆成功",
+                    reply = review.AdminReply,
+                    replyTime = review.AdminReplyTime?.ToString("yyyy-MM-dd HH:mm"),
+                    repliedBy = review.AdminRepliedBy
+                });
+            }
+            catch (Exception ex)
+            {
+                _log.Log("Review", "AdminReplyError", reviewId.ToString(), ex.Message);
+                return Json(new { success = false, message = "回覆失敗" });
+            }
+        }
+
+        // 置頂/取消置頂評價
+        [HttpPost]
+        [Authorize(AuthenticationSchemes = "EngineerCookie")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TogglePin(int reviewId)
+        {
+            try
+            {
+                var review = await _context.Reviews.FindAsync(reviewId);
+                if (review == null)
+                {
+                    return Json(new { success = false, message = "評價不存在" });
+                }
+
+                review.IsPinned = !review.IsPinned;
+                await _context.SaveChangesAsync();
+
+                _log.Log("Review", "TogglePin", reviewId.ToString(),
+                    review.IsPinned ? "置頂評價" : "取消置頂評價");
+
+                return Json(new
+                {
+                    success = true,
+                    isPinned = review.IsPinned,
+                    message = review.IsPinned ? "評價已置頂" : "已取消置頂"
+                });
+            }
+            catch (Exception ex)
+            {
+                _log.Log("Review", "TogglePinError", reviewId.ToString(), ex.Message);
+                return Json(new { success = false, message = "操作失敗" });
+            }
+        }
+
+        // 檢舉評價（保留原有功能）
         [HttpPost]
         [Authorize(AuthenticationSchemes = "UserCookie")]
         [ValidateAntiForgeryToken]
@@ -355,17 +532,26 @@ namespace ECommercePlatform.Controllers
             }
         }
 
-        //獲取商品評價（API）
+        // 獲取商品評價（API）- 改善版本
         [HttpGet]
         [Route("api/reviews/product/{productId}")]
-        public async Task<IActionResult> GetProductReviews(int productId, int page = 1, int pageSize = 5)
+        public async Task<IActionResult> GetProductReviews(int productId, int page = 1, int pageSize = 5, string sort = "latest")
         {
             try
             {
                 var query = _context.Reviews
                     .Include(r => r.User)
                     .Where(r => r.ProductId == productId && r.IsVisible)
-                    .OrderByDescending(r => r.CreatedAt);
+                    .AsQueryable();
+
+                // 排序
+                query = sort switch
+                {
+                    "latest" => query.OrderByDescending(r => r.IsPinned).ThenByDescending(r => r.CreatedAt),
+                    "highscore" => query.OrderByDescending(r => r.IsPinned).ThenByDescending(r => r.Rating),
+                    "helpful" => query.OrderByDescending(r => r.IsPinned).ThenByDescending(r => r.HelpfulCount),
+                    _ => query.OrderByDescending(r => r.IsPinned).ThenByDescending(r => r.CreatedAt)
+                };
 
                 var totalItems = await query.CountAsync();
                 var reviews = await query
@@ -377,8 +563,16 @@ namespace ECommercePlatform.Controllers
                         r.Content,
                         r.Rating,
                         r.CreatedAt,
+                        r.IsPinned,
+                        r.HelpfulCount,
+                        r.UnhelpfulCount,
                         UserName = r.UserName ?? r.User.Username,
-                        HasImage = r.ImageData != null
+                        HasImage = r.ImageData != null,
+                        RelativeTime = r.RelativeTime,
+                        RatingText = r.RatingText,
+                        HasAdminReply = r.HasAdminReply,
+                        AdminReply = r.AdminReply,
+                        AdminReplyTime = r.AdminReplyTime
                     })
                     .ToListAsync();
 
@@ -399,7 +593,7 @@ namespace ECommercePlatform.Controllers
             }
         }
 
-        //獲取評價圖片
+        // 獲取評價圖片
         [HttpGet]
         [Route("reviews/image/{reviewId}")]
         public async Task<IActionResult> GetReviewImage(int reviewId)
@@ -412,16 +606,49 @@ namespace ECommercePlatform.Controllers
                     return NotFound();
                 }
 
-                return File(review.ImageData, "image/jpeg");
+                var contentType = review.ImageContentType ?? "image/jpeg";
+                return File(review.ImageData, contentType);
             }
             catch
             {
                 return NotFound();
             }
         }
+
+        // 獲取用戶已購買但未評價的商品
+        private async Task<List<dynamic>> GetPurchasedProductsForReview(int userId)
+        {
+            try
+            {
+                var purchasedProductIds = await _context.OrderItems
+                    .Include(oi => oi.Order)
+                    .Where(oi => oi.Order.UserId == userId && oi.Order.OrderStatus == "已送達")
+                    .Select(oi => oi.ProductId)
+                    .Distinct()
+                    .ToListAsync();
+
+                var reviewedProductIds = await _context.Reviews
+                    .Where(r => r.UserId == userId)
+                    .Select(r => r.ProductId)
+                    .ToListAsync();
+
+                var unReviewedProductIds = purchasedProductIds.Except(reviewedProductIds);
+
+                var products = await _context.Products
+                    .Where(p => unReviewedProductIds.Contains(p.Id) && p.IsActive)
+                    .Select(p => new { p.Id, p.Name, p.ImageUrl })
+                    .ToListAsync();
+
+                return products.Cast<dynamic>().ToList();
+            }
+            catch
+            {
+                return new List<dynamic>();
+            }
+        }
     }
 
-    //ViewModel 和 DTO 類別
+    // 改良的 ViewModel 類別
     public class ReviewListViewModel
     {
         public List<Review> Reviews { get; set; } = new();
@@ -432,18 +659,38 @@ namespace ECommercePlatform.Controllers
         public double AverageScore { get; set; }
         public Dictionary<int, int> RatingDistribution { get; set; } = new();
 
+        // 新增統計屬性
+        public int RecentReviewsCount { get; set; }
+        public int WithImagesCount { get; set; }
+        public int WithAdminReplyCount { get; set; }
+
         public int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
         public bool HasPreviousPage => PageNumber > 1;
         public bool HasNextPage => PageNumber < TotalPages;
+
+        // 評分分佈百分比
+        public Dictionary<int, double> RatingPercentages
+        {
+            get
+            {
+                if (TotalReviews == 0) return new Dictionary<int, double>();
+
+                return RatingDistribution.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => (double)kvp.Value / TotalReviews * 100
+                );
+            }
+        }
     }
 
+    // 評價請求模型
     public class CreateReviewRequest
     {
         [Required]
         public int ProductId { get; set; }
 
         [Required]
-        [StringLength(1000, ErrorMessage = "評價內容不能超過1000字")]
+        [StringLength(1000, MinimumLength = 10, ErrorMessage = "評價內容必須在10-1000字之間")]
         public string Content { get; set; } = string.Empty;
 
         [Required]
@@ -453,6 +700,7 @@ namespace ECommercePlatform.Controllers
         public IFormFile? ImageFile { get; set; }
     }
 
+    // 檢舉請求模型
     public class ReportReviewRequest
     {
         [Required]
@@ -469,5 +717,40 @@ namespace ECommercePlatform.Controllers
         public bool Pornography { get; set; } = false;
         public bool Threaten { get; set; } = false;
         public bool Hatred { get; set; } = false;
+    }
+    namespace ECommercePlatform.Controllers
+    {
+        public class ReviewListViewModel
+        {
+            public List<Review> Reviews { get; set; } = new();
+            public int TotalItems { get; set; }
+            public int PageNumber { get; set; }
+            public int PageSize { get; set; }
+            public int TotalReviews { get; set; }
+            public double AverageScore { get; set; }
+            public Dictionary<int, int> RatingDistribution { get; set; } = new();
+
+            // 新增統計屬性
+            public int RecentReviewsCount { get; set; }
+            public int WithImagesCount { get; set; }
+            public int WithAdminReplyCount { get; set; }
+            public int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
+            public bool HasPreviousPage => PageNumber > 1;
+            public bool HasNextPage => PageNumber < TotalPages;
+
+            // 評分分佈百分比
+            public Dictionary<int, double> RatingPercentages
+            {
+                get
+                {
+                    if (TotalReviews == 0) return new Dictionary<int, double>();
+
+                    return RatingDistribution.ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => (double)kvp.Value / TotalReviews * 100
+                    );
+                }
+            }
+        }
     }
 }
