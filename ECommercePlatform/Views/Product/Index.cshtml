@@ -1,9 +1,9 @@
-﻿@model IEnumerable<ECommercePlatform.Models.Product>
+@model ECommercePlatform.Models.ViewModels.PagedResult<ECommercePlatform.Models.Product>
 
 <h1>商品列表</h1>
 
 <div class="row">
-    @foreach (var product in Model)
+    @foreach (var product in Model.Items)
     {
         <div class="col-md-4">
             <div class="card mb-4">
@@ -17,3 +17,17 @@
         </div>
     }
 </div>
+
+@{
+    var routeValues = new Dictionary<string, object>
+    {
+        ["sort"] = ViewBag.Sort,
+        ["keyword"] = ViewBag.Keyword,
+        ["minPrice"] = ViewBag.MinPrice,
+        ["maxPrice"] = ViewBag.MaxPrice,
+        ["onSale"] = ViewBag.OnSale
+    };
+    ViewBag.RouteValues = routeValues;
+}
+
+<partial name="_Pagination" model="Model" />
