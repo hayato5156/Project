@@ -28,7 +28,7 @@ namespace ECommercePlatform.Controllers
         #region API 方法
 
         //API: 獲取產品列表
-        [HttpGet("/api/products")]
+        [HttpGet("/api/products/all")]
         public async Task<IActionResult> GetProductsApi()
         {
             var products = await _context.Products
