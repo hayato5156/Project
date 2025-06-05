@@ -1,175 +1,75 @@
 ﻿@model ECommercePlatform.Controllers.ReviewListViewModel
 
-<div class="reviews-list">
-    @if (Model?.Reviews != null && Model.Reviews.Any())
+<!-- 評價列表部分視圖 -->
+<div class="reviews-container">
+    @if (Model.Reviews != null && Model.Reviews.Any())
     {
         <div class="row">
             @foreach (var review in Model.Reviews)
             {
-                <div class="col-12 mb-4">
-                    <div class="card review-card @(review.IsPinned ? "border-warning" : "")">
-                        <!-- 置頂標籤 -->
-                        @if (review.IsPinned)
-                        {
-                            <div class="position-absolute top-0 end-0">
-                                <span class="badge bg-warning text-dark rounded-start-0" style="margin-top: 10px;">
-                                    <i class="fas fa-thumbtack me-1"></i>置頂
-                                </span>
+                <div class="col-md-6 mb-4">
+                    <div class="card review-card h-100 shadow-sm">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <div class="reviewer-info">
+                                <strong class="reviewer-name">@(review.UserName ?? review.User?.Username ?? "匿名用戶")</strong>
+                                <small class="text-muted d-block">@review.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
                             </div>
-                        }
-
-                        <div class="card-body">
-                            <div class="row">
-                                <!-- 左側：用戶信息和評分 -->
-                                <div class="col-md-3 text-center mb-3 mb-md-0">
-                                    <div class="user-avatar mb-2">
-                                        <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
-                                             style="width: 50px; height: 50px; font-size: 1.2rem;">
-                                            @(review.DisplayUserName.Substring(0, 1).ToUpper())
-                                        </div>
-                                    </div>
-                                    <h6 class="user-name mb-1">@review.DisplayUserName</h6>
-
-                                    <!-- 評分顯示 -->
-                                    <div class="rating mb-2">
-                                        <span class="text-warning fs-5">
-                                            @for (int i = 1; i <= 5; i++)
-                                            {
-                                                @(i <= review.Rating ? "★" : "☆")
-                                            }
-                                        </span>
-                                        <div class="small text-muted">@review.RatingText</div>
-                                    </div>
-
-                                    <!-- 評價時間 -->
-                                    <small class="text-muted">
-                                        <i class="fas fa-clock me-1"></i>@review.RelativeTime
-                                    </small>
-
-                                    @if (review.UpdatedAt.HasValue)
+                            <div class="rating-display">
+                                <span class="text-warning stars">
+                                    @for (int s = 1; s <= 5; s++)
                                     {
-                                        <div class="small text-info mt-1">
-                                            <i class="fas fa-edit me-1"></i>已編輯
-                                        </div>
-                                    }
-                                </div>
-
-                                <!-- 右側：評價內容 -->
-                                <div class="col-md-9">
-                                    <!-- 評價內容 -->
-                                    <div class="review-content mb-3">
-                                        <p class="mb-2">@review.Content</p>
-
-                                        <!-- 評價圖片 -->
-                                        @if (review.HasImage)
+                                        if (s <= review.Rating)
                                         {
-                                            <div class="review-image mb-3">
-                                                <img src="/reviews/image/@review.Id"
-                                                     class="img-fluid rounded shadow-sm review-img"
-                                                     alt="評價圖片"
-                                                     style="max-height: 200px; cursor: pointer;"
-                                                     data-bs-toggle="modal"
-                                                     data-bs-target="#imageModal"
-                                                     data-image-src="/reviews/image/@review.Id" />
-                                            </div>
+                                            <i class="fas fa-star"></i>
                                         }
-                                    </div>
-
-                                    <!-- 管理員回覆 -->
-                                    @if (review.HasAdminReply)
-                                    {
-                                        <div class="admin-reply bg-light p-3 rounded mb-3">
-                                            <div class="d-flex align-items-center mb-2">
-                                                <i class="fas fa-user-shield text-primary me-2"></i>
-                                                <strong class="text-primary">@(review.AdminRepliedBy ?? "官方客服")</strong>
-                                                <small class="text-muted ms-auto">@review.AdminReplyTime?.ToString("yyyy-MM-dd HH:mm")</small>
-                                            </div>
-                                            <p class="mb-0">@review.AdminReply</p>
-                                        </div>
+                                        else
+                                        {
+                                            <i class="far fa-star"></i>
+                                        }
                                     }
-
-                                    <!-- 底部操作區 -->
-                                    <div class="review-actions d-flex justify-content-between align-items-center flex-wrap">
-                                        <!-- 有用性投票 -->
-                                        <div class="helpful-votes">
-                                            @if (User.Identity?.IsAuthenticated == true)
-                                            {
-                                                <button class="btn btn-sm btn-outline-success me-2 vote-helpful"
-                                                        data-review-id="@review.Id" data-helpful="true">
-                                                    <i class="fas fa-thumbs-up me-1"></i>
-                                                    有用 (@review.HelpfulCount)
-                                                </button>
-                                                <button class="btn btn-sm btn-outline-secondary vote-helpful"
-                                                        data-review-id="@review.Id" data-helpful="false">
-                                                    <i class="fas fa-thumbs-down me-1"></i>
-                                                    無用 (@review.UnhelpfulCount)
-                                                </button>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-muted">
-                                                    <i class="fas fa-thumbs-up text-success me-1"></i>@review.HelpfulCount
-                                                    <i class="fas fa-thumbs-down text-secondary ms-3 me-1"></i>@review.UnhelpfulCount
-                                                </span>
-                                            }
-                                        </div>
-
-                                        <!-- 操作按鈕 -->
-                                        <div class="action-buttons">
-                                            @if (User.Identity?.IsAuthenticated == true)
-                                            {
-                                                var userId = int.Parse(User.Claims.First(c => c.Type == "UserId").Value);
-                                                var userRole = User.Claims.FirstOrDefault(c => c.Type == "UserRole")?.Value ?? "";
-
-                                                <!-- 檢舉按鈕 -->
-                                                @if (review.UserId != userId)
-                                                {
-                                                    <button class="btn btn-sm btn-outline-warning me-2 report-review"
-                                                            data-review-id="@review.Id">
-                                                        <i class="fas fa-flag me-1"></i>檢舉
-                                                    </button>
-                                                }
-
-                                                <!-- 編輯/刪除按鈕（本人或管理員） -->
-                                                @if (review.UserId == userId || userRole == "Admin" || userRole == "Engineer")
-                                                {
-                                                    @if (review.UserId == userId)
-                                                    {
-                                                        <button class="btn btn-sm btn-outline-primary me-2 edit-review"
-                                                                data-review-id="@review.Id"
-                                                                data-content="@review.Content"
-                                                                data-rating="@review.Rating">
-                                                            <i class="fas fa-edit me-1"></i>編輯
-                                                        </button>
-                                                    }
-
-                                                    <button class="btn btn-sm btn-outline-danger me-2 delete-review"
-                                                            data-review-id="@review.Id">
-                                                        <i class="fas fa-trash me-1"></i>刪除
-                                                    </button>
-                                                }
-
-                                                <!-- 管理員專用按鈕 -->
-                                                @if (userRole == "Admin" || userRole == "Engineer")
-                                                {
-                                                    @if (!review.HasAdminReply)
-                                                    {
-                                                        <button class="btn btn-sm btn-outline-info me-2 admin-reply"
-                                                                data-review-id="@review.Id">
-                                                            <i class="fas fa-reply me-1"></i>回覆
-                                                        </button>
-                                                    }
-
-                                                    <button class="btn btn-sm @(review.IsPinned ? "btn-warning" : "btn-outline-warning") toggle-pin"
-                                                            data-review-id="@review.Id">
-                                                        <i class="fas fa-thumbtack me-1"></i>
-                                                        @(review.IsPinned ? "取消置頂" : "置頂")
-                                                    </button>
-                                                }
-                                            }
-                                        </div>
-                                    </div>
+                                </span>
+                                <small class="rating-text">@review.Rating/5</small>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="review-content">@review.Content</p>
+                            @if (review.ImageData != null)
+                            {
+                                <div class="review-image mt-2">
+                                    <img src="/reviews/image/@review.Id" 
+                                         class="img-fluid rounded shadow-sm" 
+                                         alt="評價圖片" 
+                                         style="max-height: 200px; cursor: pointer;" 
+                                         onclick="showImageModal(this.src)" />
                                 </div>
+                            }
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="review-actions">
+                                    @if (User.Identity?.IsAuthenticated == true)
+                                    {
+                                        <button class="btn btn-sm btn-outline-primary helpful-btn" 
+                                                data-review-id="@review.Id">
+                                            <i class="fas fa-thumbs-up"></i> 有幫助
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary report-btn" 
+                                                data-review-id="@review.Id" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#reportModal">
+                                            <i class="fas fa-flag"></i> 檢舉
+                                        </button>
+                                    }
+                                </div>
+                                @if (review.Product != null)
+                                {
+                                    <div class="product-link">
+                                        <a href="/Product/Details/@review.ProductId" 
+                                           class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-external-link-alt"></i> 商品頁面
+                                        </a>
+                                    </div>
+                                }
                             </div>
                         </div>
                     </div>
@@ -185,12 +85,12 @@
                     @if (Model.HasPreviousPage)
                     {
                         <li class="page-item">
-                            <a class="page-link ajax-page" href="#" data-page="@(Model.PageNumber - 1)">
-                                <i class="fas fa-chevron-left me-1"></i>上一頁
+                            <a class="page-link" href="?page=@(Model.PageNumber - 1)&keyword=@ViewBag.Keyword&scoreFilter=@ViewBag.ScoreFilter&sort=@ViewBag.Sort">
+                                <i class="fas fa-chevron-left"></i> 上一頁
                             </a>
                         </li>
                     }
-
+                    
                     @{
                         var startPage = Math.Max(1, Model.PageNumber - 2);
                         var endPage = Math.Min(Model.TotalPages, Model.PageNumber + 2);
@@ -199,7 +99,7 @@
                     @if (startPage > 1)
                     {
                         <li class="page-item">
-                            <a class="page-link ajax-page" href="#" data-page="1">1</a>
+                            <a class="page-link" href="?page=1&keyword=@ViewBag.Keyword&scoreFilter=@ViewBag.ScoreFilter&sort=@ViewBag.Sort">1</a>
                         </li>
                         @if (startPage > 2)
                         {
@@ -212,7 +112,7 @@
                     @for (var i = startPage; i <= endPage; i++)
                     {
                         <li class="page-item @(Model.PageNumber == i ? "active" : "")">
-                            <a class="page-link ajax-page" href="#" data-page="@i">@i</a>
+                            <a class="page-link" href="?page=@i&keyword=@ViewBag.Keyword&scoreFilter=@ViewBag.ScoreFilter&sort=@ViewBag.Sort">@i</a>
                         </li>
                     }
 
@@ -225,402 +125,276 @@
                             </li>
                         }
                         <li class="page-item">
-                            <a class="page-link ajax-page" href="#" data-page="@Model.TotalPages">@Model.TotalPages</a>
+                            <a class="page-link" href="?page=@Model.TotalPages&keyword=@ViewBag.Keyword&scoreFilter=@ViewBag.ScoreFilter&sort=@ViewBag.Sort">@Model.TotalPages</a>
                         </li>
                     }
-
+                    
                     @if (Model.HasNextPage)
                     {
                         <li class="page-item">
-                            <a class="page-link ajax-page" href="#" data-page="@(Model.PageNumber + 1)">
-                                下一頁<i class="fas fa-chevron-right ms-1"></i>
+                            <a class="page-link" href="?page=@(Model.PageNumber + 1)&keyword=@ViewBag.Keyword&scoreFilter=@ViewBag.ScoreFilter&sort=@ViewBag.Sort">
+                                下一頁 <i class="fas fa-chevron-right"></i>
                             </a>
                         </li>
                     }
                 </ul>
             </nav>
+
+            <!-- 分頁資訊 -->
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    顯示第 @((Model.PageNumber - 1) * Model.PageSize + 1) - @Math.Min(Model.PageNumber * Model.PageSize, Model.TotalItems) 則評價，
+                    共 @Model.TotalItems 則
+                </small>
+            </div>
         }
     }
     else
     {
-        <!-- 無評價狀態 -->
-        <div class="no-reviews text-center py-5">
-            <div class="mb-4">
-                <i class="fas fa-comments" style="font-size: 4rem; color: #ddd;"></i>
-            </div>
-            <h4 class="text-muted mb-3">目前沒有評價</h4>
-            <p class="text-muted mb-4">
-                @if (ViewBag.ProductName != null)
+        <!-- 空狀態 -->
+        <div class="text-center py-5">
+            <div class="empty-state">
+                <i class="fas fa-comments fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">還沒有評價</h4>
+                <p class="text-muted">成為第一個評價的人，分享您的使用體驗！</p>
+                @if (User.Identity?.IsAuthenticated == true)
                 {
-                    <span>還沒有人評價這個商品，成為第一個評價的人吧！</span>
+                    <button type="button" class="btn btn-success mt-3" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#addReviewModal">
+                        <i class="fas fa-edit"></i> 立即評價
+                    </button>
                 }
                 else
                 {
-                    <span>目前沒有符合條件的評價，試試調整篩選條件。</span>
+                    <a href="/Account/Login" class="btn btn-primary mt-3">
+                        <i class="fas fa-sign-in-alt"></i> 登入後評價
+                    </a>
                 }
-            </p>
-
-            @if (User.Identity?.IsAuthenticated == true)
-            {
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addReviewModal">
-                    <i class="fas fa-star me-1"></i>寫第一個評價
-                </button>
-            }
-            else
-            {
-                <a asp-controller="Account" asp-action="Login" class="btn btn-outline-primary">
-                    <i class="fas fa-sign-in-alt me-1"></i>登入後評價
-                </a>
-            }
+            </div>
         </div>
     }
 </div>
 
-<!-- 圖片檢視模態框 -->
-<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+<!-- 圖片放大模態框 -->
+<div class="modal fade" id="imageModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header border-0">
                 <h5 class="modal-title">評價圖片</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body text-center">
-                <img id="modalImage" src="" class="img-fluid" alt="評價圖片" />
+            <div class="modal-body text-center p-0">
+                <img id="modalImage" src="" alt="評價圖片" class="img-fluid" />
             </div>
         </div>
     </div>
 </div>
 
-<!-- 編輯評價模態框 -->
-<div class="modal fade" id="editReviewModal" tabindex="-1" aria-hidden="true">
+<!-- 檢舉模態框 -->
+<div class="modal fade" id="reportModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">編輯評價</h5>
+                <h5 class="modal-title"><i class="fas fa-flag"></i> 檢舉評價</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="editReviewForm">
+            <form id="reportForm">
                 <div class="modal-body">
-                    <input type="hidden" id="editReviewId" />
-
+                    <input type="hidden" id="reportReviewId" name="reviewId" />
+                    
                     <div class="mb-3">
-                        <label class="form-label">評分</label>
-                        <div class="rating-edit">
-                            @for (int i = 1; i <= 5; i++)
-                            {
-                                <input type="radio" name="editRating" value="@i" id="editStar@i" />
-                                <label for="editStar@i" class="star-label">★</label>
-                            }
-                        </div>
+                        <label class="form-label">檢舉原因：</label>
+                        <select name="reason" class="form-select" required>
+                            <option value="">請選擇檢舉原因</option>
+                            <option value="spam">垃圾訊息</option>
+                            <option value="inappropriate">不當內容</option>
+                            <option value="fake">虛假評價</option>
+                            <option value="harassment">騷擾他人</option>
+                            <option value="other">其他</option>
+                        </select>
                     </div>
-
+                    
                     <div class="mb-3">
-                        <label class="form-label">評價內容</label>
-                        <textarea id="editContent" class="form-control" rows="5" required
-                                  minlength="10" maxlength="1000"></textarea>
-                        <div class="form-text">10-1000字</div>
+                        <label class="form-label">詳細說明：</label>
+                        <textarea name="description" class="form-control" rows="3" 
+                                  placeholder="請詳細說明檢舉原因..."></textarea>
+                    </div>
+                    
+                    <div class="form-check">
+                        <input type="checkbox" name="harassment" class="form-check-input" id="harassment">
+                        <label class="form-check-label" for="harassment">騷擾</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="pornography" class="form-check-input" id="pornography">
+                        <label class="form-check-label" for="pornography">色情內容</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="threaten" class="form-check-input" id="threaten">
+                        <label class="form-check-label" for="threaten">威脅</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="hatred" class="form-check-input" id="hatred">
+                        <label class="form-check-label" for="hatred">仇恨言論</label>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="submit" class="btn btn-primary">更新評價</button>
+                    <button type="submit" class="btn btn-danger">提交檢舉</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
-<!-- 管理員回覆模態框 -->
-<div class="modal fade" id="adminReplyModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">官方回覆</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="adminReplyForm">
-                <div class="modal-body">
-                    <input type="hidden" id="replyReviewId" />
-                    <div class="mb-3">
-                        <label class="form-label">回覆內容</label>
-                        <textarea id="replyContent" class="form-control" rows="4" required
-                                  maxlength="500" placeholder="請輸入官方回覆..."></textarea>
-                        <div class="form-text">最多500字</div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="submit" class="btn btn-primary">發送回覆</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<script>
-    $(document).ready(function() {
-        // AJAX 分頁
-        $(document).on('click', '.ajax-page', function(e) {
-            e.preventDefault();
-            const page = $(this).data('page');
-            if (page) {
-                loadReviews(page);
-            }
-        });
-
-        // 有用性投票
-        $(document).on('click', '.vote-helpful', function() {
-            const reviewId = $(this).data('review-id');
-            const isHelpful = $(this).data('helpful');
-
-            $.ajax({
-                url: '@Url.Action("VoteHelpful", "Review")',
-                type: 'POST',
-                data: { reviewId: reviewId, isHelpful: isHelpful },
-                headers: {
-                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                },
-                success: function(result) {
-                    if (result.success) {
-                        // 更新投票數
-                        const card = $(`.vote-helpful[data-review-id="${reviewId}"]`).closest('.review-card');
-                        card.find('.vote-helpful[data-helpful="true"]').html(`<i class="fas fa-thumbs-up me-1"></i>有用 (${result.helpfulCount})`);
-                        card.find('.vote-helpful[data-helpful="false"]').html(`<i class="fas fa-thumbs-down me-1"></i>無用 (${result.unhelpfulCount})`);
-
-                        showAlert('success', isHelpful ? '感謝您的反饋！' : '感謝您的反饋！');
-                    } else {
-                        showAlert('danger', result.message || '操作失敗');
-                    }
-                },
-                error: function() {
-                    showAlert('danger', '操作失敗，請稍後重試');
-                }
-            });
-        });
-
-        // 編輯評價
-        $(document).on('click', '.edit-review', function() {
-            const reviewId = $(this).data('review-id');
-            const content = $(this).data('content');
-            const rating = $(this).data('rating');
-
-            $('#editReviewId').val(reviewId);
-            $('#editContent').val(content);
-            $(`input[name="editRating"][value="${rating}"]`).prop('checked', true);
-            $('#editReviewModal').modal('show');
-        });
-
-        // 提交編輯
-        $('#editReviewForm').submit(function(e) {
-            e.preventDefault();
-
-            const reviewId = $('#editReviewId').val();
-            const content = $('#editContent').val();
-            const rating = $('input[name="editRating"]:checked').val();
-
-            $.ajax({
-                url: '@Url.Action("Update", "Review")',
-                type: 'POST',
-                data: { reviewId: reviewId, content: content, rating: rating },
-                headers: {
-                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                },
-                success: function(result) {
-                    if (result.success) {
-                        $('#editReviewModal').modal('hide');
-                        showAlert('success', result.message || '評價更新成功');
-                        location.reload();
-                    } else {
-                        showAlert('danger', result.message || '更新失敗');
-                    }
-                }
-            });
-        });
-
-        // 刪除評價
-        $(document).on('click', '.delete-review', function() {
-            if (confirm('確定要刪除這個評價嗎？')) {
-                const reviewId = $(this).data('review-id');
-
-                $.ajax({
-                    url: '@Url.Action("Delete", "Review")',
-                    type: 'POST',
-                    data: { reviewId: reviewId },
-                    headers: {
-                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                    },
-                    success: function(result) {
-                        if (result.success) {
-                            showAlert('success', result.message || '評價已刪除');
-                            location.reload();
-                        } else {
-                            showAlert('danger', result.message || '刪除失敗');
-                        }
-                    }
-                });
-            }
-        });
-
-        // 管理員回覆
-        $(document).on('click', '.admin-reply', function() {
-            const reviewId = $(this).data('review-id');
-            $('#replyReviewId').val(reviewId);
-            $('#adminReplyModal').modal('show');
-        });
-
-        $('#adminReplyForm').submit(function(e) {
-            e.preventDefault();
-
-            const reviewId = $('#replyReviewId').val();
-            const reply = $('#replyContent').val();
-
-            $.ajax({
-                url: '@Url.Action("AdminReply", "Review")',
-                type: 'POST',
-                data: { reviewId: reviewId, reply: reply },
-                headers: {
-                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                },
-                success: function(result) {
-                    if (result.success) {
-                        $('#adminReplyModal').modal('hide');
-                        showAlert('success', '回覆成功');
-                        location.reload();
-                    } else {
-                        showAlert('danger', result.message || '回覆失敗');
-                    }
-                }
-            });
-        });
-
-        // 置頂切換
-        $(document).on('click', '.toggle-pin', function() {
-            const reviewId = $(this).data('review-id');
-
-            $.ajax({
-                url: '@Url.Action("TogglePin", "Review")',
-                type: 'POST',
-                data: { reviewId: reviewId },
-                headers: {
-                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                },
-                success: function(result) {
-                    if (result.success) {
-                        showAlert('success', result.message);
-                        location.reload();
-                    } else {
-                        showAlert('danger', result.message || '操作失敗');
-                    }
-                }
-            });
-        });
-
-        // 圖片檢視
-        $(document).on('click', '.review-img', function() {
-            const imageSrc = $(this).data('image-src');
-            $('#modalImage').attr('src', imageSrc);
-        });
-    });
-
-    // AJAX 載入評價
-    function loadReviews(page = 1) {
-        const params = new URLSearchParams(window.location.search);
-        params.set('page', page);
-
-        $.ajax({
-            url: '/Review/Index?' + params.toString(),
-            type: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            success: function(data) {
-                $('#reviewsContainer').html(data);
-
-                // 滾動到評價區域
-                $('html, body').animate({
-                    scrollTop: $('#reviewsContainer').offset().top - 100
-                }, 500);
-            },
-            error: function() {
-                showAlert('danger', '載入評價失敗，請重新整理頁面');
-            }
-        });
-    }
-
-    // 顯示提示訊息
-    function showAlert(type, message) {
-        const alertHtml = `
-            <div class="alert alert-${type} alert-dismissible fade show position-fixed"
-                 style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;" role="alert">
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-        $('body').append(alertHtml);
-
-        setTimeout(function() {
-            $('.alert').alert('close');
-        }, 5000);
-    }
-</script>
 
 <style>
-    .review-card {
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    }
+.review-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
 
-        .review-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
+.review-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+}
 
-    .rating-edit {
-        display: flex;
-        flex-direction: row-reverse;
-        justify-content: flex-end;
-    }
+.reviewer-name {
+    color: #495057;
+}
 
-        .rating-edit input[type="radio"] {
-            display: none;
-        }
+.stars i {
+    font-size: 0.9rem;
+}
 
-        .rating-edit .star-label {
-            font-size: 1.5rem;
-            color: #ddd;
-            cursor: pointer;
-            transition: color 0.2s;
-            margin-right: 3px;
-        }
+.review-content {
+    line-height: 1.6;
+    color: #333;
+}
 
-            .rating-edit input[type="radio"]:checked ~ .star-label,
-            .rating-edit .star-label:hover,
-            .rating-edit .star-label:hover ~ .star-label {
-                color: #ffc107;
-            }
+.review-image img {
+    transition: transform 0.2s ease;
+}
 
-    .review-img:hover {
-        opacity: 0.8;
-    }
+.review-image img:hover {
+    transform: scale(1.05);
+}
 
-    .admin-reply {
-        border-left: 4px solid #007bff;
-    }
+.helpful-votes {
+    margin-bottom: 10px;
+}
 
-    @media (max-width: 768px) {
-        .review-actions
+.action-buttons .btn {
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
 
-    {
+.admin-reply {
+    border-left: 4px solid #007bff;
+}
+
+/* 響應式設計*/
+@@media (max-width: 768px) {
+    .review-actions {
         flex-direction: column;
         align-items: flex-start !important;
     }
-
-    .helpful-votes {
-        margin-bottom: 10px;
-    }
-
-    .action-buttons .btn {
+    
+    .review-actions .btn {
         margin-bottom: 5px;
+        width: 100%;
     }
+}
 
+@@media (max-width: 576px) {
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start !important;
     }
+    
+    .rating-display {
+        margin-top: 10px;
+    }
+}
+
+.helpful-votes {
+    margin-bottom: 10px;
+}
+
+.action-buttons .btn {
+    border-radius: 20px;
+}
+
+.empty-state i {
+    opacity: 0.3;
+}
 </style>
+
+<script>
+// 圖片放大功能
+function showImageModal(imageSrc) {
+    document.getElementById('modalImage').src = imageSrc;
+    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+    modal.show();
+}
+
+// 檢舉功能
+document.addEventListener('DOMContentLoaded', function() {
+    // 檢舉按鈕點擊事件
+    document.querySelectorAll('.report-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const reviewId = this.getAttribute('data-review-id');
+            document.getElementById('reportReviewId').value = reviewId;
+        });
+    });
+
+    // 檢舉表單提交
+    document.getElementById('reportForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+        
+        // 處理 checkbox 值
+        data.harassment = formData.has('harassment');
+        data.pornography = formData.has('pornography');
+        data.threaten = formData.has('threaten');
+        data.hatred = formData.has('hatred');
+        
+        fetch('/Review/Report', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
+            modal.hide();
+            
+            if (result.success) {
+                alert('✅ ' + result.message);
+            } else {
+                alert('❌ ' + result.message);
+            }
+        })
+        .catch(error => {
+            console.error('檢舉失敗:', error);
+            alert('❌ 檢舉失敗，請稍後再試');
+        });
+    });
+
+    // 有幫助按鈕
+    document.querySelectorAll('.helpful-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const reviewId = this.getAttribute('data-review-id');
+            
+            // 這裡可以實作有幫助的功能
+            this.classList.add('btn-primary');
+            this.classList.remove('btn-outline-primary');
+            this.innerHTML = '<i class="fas fa-thumbs-up"></i> 已標記有幫助';
+            this.disabled = true;
+        });
+    });
+});
+</script>

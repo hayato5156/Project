@@ -12,12 +12,13 @@ public static class DbInitializer
         // 添加用戶資料
         if (!context.Users.Any())
         {
-            context.Users.AddRange(
+            var users = new[]
+            {
                 new User
                 {
                     Username = "admin",
                     Email = "admin@example.com",
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"), // 使用 BCrypt 加密
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
                     Role = "Admin",
                     Address = "123 Admin St",
                     PhoneNumber = "0987654321",
@@ -51,14 +52,19 @@ public static class DbInitializer
                     LastName = "Doe",
                     CreatedAt = DateTime.UtcNow,
                     IsActive = true
-                });
+                }
+            };
+
+            context.Users.AddRange(users);
             context.SaveChanges();
+            Console.WriteLine($"✅ 已新增 {users.Length} 個用戶");
         }
 
-        // 添加商品資料（包含庫存）
+        // 添加商品資料
         if (!context.Products.Any())
         {
-            context.Products.AddRange(
+            var products = new[]
+            {
                 new Product
                 {
                     Name = "iPhone 15 Pro",
@@ -70,7 +76,7 @@ public static class DbInitializer
                     ImageUrl = "/images/iphone15pro.jpg",
                     CreatedAt = DateTime.UtcNow,
                     IsActive = true,
-                    Stock = 50 // 加入庫存
+                    Stock = 50
                 },
                 new Product
                 {
@@ -80,7 +86,7 @@ public static class DbInitializer
                     ImageUrl = "/images/macbook-air-m3.jpg",
                     CreatedAt = DateTime.UtcNow,
                     IsActive = true,
-                    Stock = 30 // 加入庫存
+                    Stock = 30
                 },
                 new Product
                 {
@@ -93,7 +99,7 @@ public static class DbInitializer
                     ImageUrl = "/images/airpods-pro-2.jpg",
                     CreatedAt = DateTime.UtcNow,
                     IsActive = true,
-                    Stock = 100 // 加入庫存
+                    Stock = 100
                 },
                 new Product
                 {
@@ -103,7 +109,7 @@ public static class DbInitializer
                     ImageUrl = "/images/ipad-air.jpg",
                     CreatedAt = DateTime.UtcNow,
                     IsActive = true,
-                    Stock = 25 // 加入庫存
+                    Stock = 25
                 },
                 new Product
                 {
@@ -116,7 +122,7 @@ public static class DbInitializer
                     ImageUrl = "/images/apple-watch-9.jpg",
                     CreatedAt = DateTime.UtcNow,
                     IsActive = true,
-                    Stock = 75 // 加入庫存
+                    Stock = 75
                 },
                 new Product
                 {
@@ -126,40 +132,20 @@ public static class DbInitializer
                     ImageUrl = "/images/magic-keyboard.jpg",
                     CreatedAt = DateTime.UtcNow,
                     IsActive = true,
-                    Stock = 15 // 加入庫存
-                },
-                // 額外的測試商品
-                new Product
-                {
-                    Name = "限量商品測試",
-                    Description = "僅剩3件的限量商品，用於測試庫存不足功能。",
-                    Price = 999m,
-                    DiscountPrice = 799m,
-                    DiscountStart = DateTime.UtcNow,
-                    DiscountEnd = DateTime.UtcNow.AddDays(7),
-                    ImageUrl = "/images/limited-product.jpg",
-                    CreatedAt = DateTime.UtcNow,
-                    IsActive = true,
-                    Stock = 3 // 🚨 低庫存測試
-                },
-                new Product
-                {
-                    Name = "已售完商品",
-                    Description = "用於測試已售完商品的顯示。",
-                    Price = 1999m,
-                    ImageUrl = "/images/sold-out.jpg",
-                    CreatedAt = DateTime.UtcNow,
-                    IsActive = true,
-                    Stock = 0 // ❌ 已售完
+                    Stock = 15
                 }
-            );
+            };
+
+            context.Products.AddRange(products);
             context.SaveChanges();
+            Console.WriteLine($"✅ 已新增 {products.Length} 個商品");
         }
 
-        // 添加工程師資料 (如果需要)
+        // 添加工程師資料
         if (context.Engineers != null && !context.Engineers.Any())
         {
-            context.Engineers.AddRange(
+            var engineers = new[]
+            {
                 new Engineer
                 {
                     Username = "engineer1",
@@ -172,29 +158,66 @@ public static class DbInitializer
                     Email = "engineer2@example.com",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("engineer456")
                 }
-            );
+            };
+
+            context.Engineers.AddRange(engineers);
             context.SaveChanges();
+            Console.WriteLine($"✅ 已新增 {engineers.Length} 個工程師帳號");
         }
 
-        // 添加示例評價資料
-        if (!context.Reviews.Any() && context.Products.Any() && context.Users.Any())
+        // 🔥 重點：添加示例評價資料（確保正確執行）
+        SeedReviewData(context);
+    }
+
+    // 專門的評價資料種子方法
+    private static void SeedReviewData(ApplicationDbContext context)
+    {
+        try
         {
-            var iphone = context.Products.First(p => p.Name.Contains("iPhone"));
-            var macbook = context.Products.First(p => p.Name.Contains("MacBook"));
-            var airpods = context.Products.First(p => p.Name.Contains("AirPods"));
+            // 檢查是否已有評價資料
+            if (context.Reviews.Any())
+            {
+                Console.WriteLine("⚠️ 評價資料已存在，跳過初始化");
+                return;
+            }
 
-            var john = context.Users.First(u => u.Username == "johndoe");
-            var jane = context.Users.First(u => u.Username == "janedoe");
-            var admin = context.Users.First(u => u.Username == "admin");
+            // 確保用戶和商品資料存在
+            var users = context.Users.ToList();
+            var products = context.Products.ToList();
 
-            context.Reviews.AddRange(
+            if (!users.Any() || !products.Any())
+            {
+                Console.WriteLine("❌ 缺少用戶或商品資料，無法創建評價");
+                return;
+            }
+
+            // 找到特定商品
+            var iphone = products.FirstOrDefault(p => p.Name.Contains("iPhone"));
+            var macbook = products.FirstOrDefault(p => p.Name.Contains("MacBook"));
+            var airpods = products.FirstOrDefault(p => p.Name.Contains("AirPods"));
+            var ipad = products.FirstOrDefault(p => p.Name.Contains("iPad"));
+
+            // 找到特定用戶
+            var john = users.FirstOrDefault(u => u.Username == "johndoe");
+            var jane = users.FirstOrDefault(u => u.Username == "janedoe");
+            var admin = users.FirstOrDefault(u => u.Username == "admin");
+
+            if (iphone == null || macbook == null || airpods == null ||
+                john == null || jane == null || admin == null)
+            {
+                Console.WriteLine("❌ 找不到必要的用戶或商品資料");
+                return;
+            }
+
+            var reviews = new[]
+            {
                 // iPhone 評價
                 new Review
                 {
                     UserId = john.Id,
                     ProductId = iphone.Id,
                     UserName = john.Username,
-                    Content = "iPhone 15 Pro 真的很棒！相機品質提升很多，鈦金屬設計很有質感。",
+                    Content = "iPhone 15 Pro 真的很棒！相機品質提升很多，鈦金屬設計很有質感。攝影效果超乎預期，值得購買！",
                     Rating = 5,
                     CreatedAt = DateTime.UtcNow.AddDays(-10),
                     IsVisible = true
@@ -204,9 +227,19 @@ public static class DbInitializer
                     UserId = jane.Id,
                     ProductId = iphone.Id,
                     UserName = jane.Username,
-                    Content = "價格有點高，但是性能確實很好，建議等特價再買。",
+                    Content = "價格有點高，但是性能確實很好。電池續航比上一代有明顯提升，整體滿意。",
                     Rating = 4,
                     CreatedAt = DateTime.UtcNow.AddDays(-8),
+                    IsVisible = true
+                },
+                new Review
+                {
+                    UserId = admin.Id,
+                    ProductId = iphone.Id,
+                    UserName = admin.Username,
+                    Content = "作為管理員測試使用，各項功能都很穩定，推薦給需要高性能手機的用戶。",
+                    Rating = 5,
+                    CreatedAt = DateTime.UtcNow.AddDays(-5),
                     IsVisible = true
                 },
 
@@ -216,9 +249,19 @@ public static class DbInitializer
                     UserId = admin.Id,
                     ProductId = macbook.Id,
                     UserName = admin.Username,
-                    Content = "M3 晶片的效能真的很驚人，編譯速度快很多！",
+                    Content = "M3 晶片的效能真的很驚人，編譯速度快很多！辦公和開發都很順暢。",
                     Rating = 5,
-                    CreatedAt = DateTime.UtcNow.AddDays(-5),
+                    CreatedAt = DateTime.UtcNow.AddDays(-7),
+                    IsVisible = true
+                },
+                new Review
+                {
+                    UserId = john.Id,
+                    ProductId = macbook.Id,
+                    UserName = john.Username,
+                    Content = "輕薄便攜，性能強勁。唯一缺點是價格偏高，但物有所值。",
+                    Rating = 4,
+                    CreatedAt = DateTime.UtcNow.AddDays(-4),
                     IsVisible = true
                 },
 
@@ -228,7 +271,7 @@ public static class DbInitializer
                     UserId = jane.Id,
                     ProductId = airpods.Id,
                     UserName = jane.Username,
-                    Content = "降噪效果很棒，音質也很好，值得購買！",
+                    Content = "降噪效果很棒，音質也很好，長時間佩戴也很舒適，值得購買！",
                     Rating = 5,
                     CreatedAt = DateTime.UtcNow.AddDays(-3),
                     IsVisible = true
@@ -238,13 +281,98 @@ public static class DbInitializer
                     UserId = john.Id,
                     ProductId = airpods.Id,
                     UserName = john.Username,
-                    Content = "整體不錯，但是價格還是偏高。",
+                    Content = "整體不錯，音質有提升，但是價格還是偏高。",
                     Rating = 4,
                     CreatedAt = DateTime.UtcNow.AddDays(-1),
                     IsVisible = true
+                },
+                new Review
+                {
+                    UserId = admin.Id,
+                    ProductId = airpods.Id,
+                    UserName = admin.Username,
+                    Content = "主動降噪功能很實用，適合通勤使用。電池續航也很不錯。",
+                    Rating = 5,
+                    CreatedAt = DateTime.UtcNow.AddHours(-12),
+                    IsVisible = true
                 }
-            );
+            };
+
+            // 如果有 iPad，也加入評價
+            if (ipad != null)
+            {
+                var iPadReviews = new[]
+                {
+                    new Review
+                    {
+                        UserId = jane.Id,
+                        ProductId = ipad.Id,
+                        UserName = jane.Username,
+                        Content = "iPad Air 很適合繪圖和筆記，M1 晶片運行很流暢。",
+                        Rating = 5,
+                        CreatedAt = DateTime.UtcNow.AddDays(-2),
+                        IsVisible = true
+                    },
+                    new Review
+                    {
+                        UserId = john.Id,
+                        ProductId = ipad.Id,
+                        UserName = john.Username,
+                        Content = "螢幕顯示效果很好，但覺得配件有點貴。",
+                        Rating = 4,
+                        CreatedAt = DateTime.UtcNow.AddHours(-6),
+                        IsVisible = true
+                    }
+                };
+
+                reviews = reviews.Concat(iPadReviews).ToArray();
+            }
+
+            context.Reviews.AddRange(reviews);
             context.SaveChanges();
+
+            Console.WriteLine($"✅ 已新增 {reviews.Length} 則評價資料");
+
+            // 驗證資料是否正確插入
+            var insertedReviews = context.Reviews.Count();
+            Console.WriteLine($"📊 資料庫中共有 {insertedReviews} 則評價");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ 評價資料初始化失敗: {ex.Message}");
+            Console.WriteLine($"詳細錯誤: {ex.StackTrace}");
+        }
+    }
+
+    // 檢查資料庫狀態的輔助方法
+    public static void CheckDatabaseStatus(ApplicationDbContext context)
+    {
+        try
+        {
+            var userCount = context.Users.Count();
+            var productCount = context.Products.Count();
+            var reviewCount = context.Reviews.Count();
+
+            Console.WriteLine("=== 資料庫狀態檢查 ===");
+            Console.WriteLine($"👥 用戶數量: {userCount}");
+            Console.WriteLine($"📱 商品數量: {productCount}");
+            Console.WriteLine($"💬 評價數量: {reviewCount}");
+
+            if (reviewCount == 0)
+            {
+                Console.WriteLine("⚠️ 警告：沒有評價資料，可能需要重新執行種子資料");
+            }
+            else
+            {
+                var visibleReviews = context.Reviews.Count(r => r.IsVisible);
+                Console.WriteLine($"👁️ 可見評價: {visibleReviews}");
+            }
+
+            Console.WriteLine("======================");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ 資料庫狀態檢查失敗: {ex.Message}");
         }
     }
 }

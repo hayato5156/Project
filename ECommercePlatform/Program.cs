@@ -81,6 +81,8 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// 在 Program.cs 中的資料庫初始化部分（替換原有的部分）
+
 // 資料庫初始化和遷移
 using (var scope = app.Services.CreateScope())
 {
@@ -89,26 +91,144 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
+        logger.LogInformation("開始資料庫初始化...");
+
         // 確保資料庫存在並執行遷移
         await context.Database.EnsureCreatedAsync();
 
-        // 添加新的遷移處理
+        // 檢查並執行待處理的遷移
         var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
         if (pendingMigrations.Any())
         {
-            logger.LogInformation("正在執行資料庫遷移...");
+            logger.LogInformation($"正在執行 {pendingMigrations.Count()} 個待處理的遷移...");
             await context.Database.MigrateAsync();
             logger.LogInformation("資料庫遷移完成");
         }
 
         // 初始化種子資料
+        logger.LogInformation("開始初始化種子資料...");
         DbInitializer.Seed(context);
+
+        // 檢查資料庫狀態
+        DbInitializer.CheckDatabaseStatus(context);
+
         logger.LogInformation("種子資料初始化完成");
+
+        // 額外檢查評價資料
+        var reviewCount = await context.Reviews.CountAsync();
+        var visibleReviewCount = await context.Reviews.CountAsync(r => r.IsVisible);
+
+        logger.LogInformation($"評價資料檢查：總計 {reviewCount} 則，可見 {visibleReviewCount} 則");
+
+        if (reviewCount == 0)
+        {
+            logger.LogWarning("⚠️ 沒有發現評價資料，請檢查種子資料初始化");
+
+            // 嘗試手動重新初始化評價資料
+            try
+            {
+                logger.LogInformation("嘗試手動重新初始化評價資料...");
+
+                var users = await context.Users.ToListAsync();
+                var products = await context.Products.ToListAsync();
+
+                if (users.Any() && products.Any())
+                {
+                    var john = users.FirstOrDefault(u => u.Username == "johndoe");
+                    var jane = users.FirstOrDefault(u => u.Username == "janedoe");
+                    var admin = users.FirstOrDefault(u => u.Username == "admin");
+
+                    var iphone = products.FirstOrDefault(p => p.Name.Contains("iPhone"));
+                    var macbook = products.FirstOrDefault(p => p.Name.Contains("MacBook"));
+                    var airpods = products.FirstOrDefault(p => p.Name.Contains("AirPods"));
+
+                    if (john != null && jane != null && admin != null &&
+                        iphone != null && macbook != null && airpods != null)
+                    {
+                        var reviews = new[]
+                        {
+                            new Review
+                            {
+                                UserId = john.Id,
+                                ProductId = iphone.Id,
+                                UserName = john.Username,
+                                Content = "iPhone 15 Pro 真的很棒！相機品質提升很多，鈦金屬設計很有質感。",
+                                Rating = 5,
+                                CreatedAt = DateTime.UtcNow.AddDays(-10),
+                                IsVisible = true
+                            },
+                            new Review
+                            {
+                                UserId = jane.Id,
+                                ProductId = iphone.Id,
+                                UserName = jane.Username,
+                                Content = "價格有點高，但是性能確實很好，建議等特價再買。",
+                                Rating = 4,
+                                CreatedAt = DateTime.UtcNow.AddDays(-8),
+                                IsVisible = true
+                            },
+                            new Review
+                            {
+                                UserId = admin.Id,
+                                ProductId = macbook.Id,
+                                UserName = admin.Username,
+                                Content = "M3 晶片的效能真的很驚人，編譯速度快很多！",
+                                Rating = 5,
+                                CreatedAt = DateTime.UtcNow.AddDays(-5),
+                                IsVisible = true
+                            },
+                            new Review
+                            {
+                                UserId = jane.Id,
+                                ProductId = airpods.Id,
+                                UserName = jane.Username,
+                                Content = "降噪效果很棒，音質也很好，值得購買！",
+                                Rating = 5,
+                                CreatedAt = DateTime.UtcNow.AddDays(-3),
+                                IsVisible = true
+                            },
+                            new Review
+                            {
+                                UserId = john.Id,
+                                ProductId = airpods.Id,
+                                UserName = john.Username,
+                                Content = "整體不錯，但是價格還是偏高。",
+                                Rating = 4,
+                                CreatedAt = DateTime.UtcNow.AddDays(-1),
+                                IsVisible = true
+                            }
+                        };
+
+                        context.Reviews.AddRange(reviews);
+                        await context.SaveChangesAsync();
+
+                        logger.LogInformation($"✅ 成功手動創建 {reviews.Length} 則評價資料");
+                    }
+                    else
+                    {
+                        logger.LogWarning("找不到必要的用戶或商品資料");
+                    }
+                }
+                else
+                {
+                    logger.LogWarning("缺少用戶或商品資料，無法創建評價");
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "手動初始化評價資料失敗");
+            }
+        }
     }
     catch (Exception ex)
     {
         logger.LogError(ex, "資料庫初始化失敗");
-        throw;
+
+        // 在開發環境中拋出異常，生產環境中記錄錯誤但繼續運行
+        if (app.Environment.IsDevelopment())
+        {
+            throw;
+        }
     }
 }
 
