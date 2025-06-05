@@ -1,4 +1,4 @@
-﻿@model IEnumerable<ECommercePlatform.Models.User>
+@model ECommercePlatform.Models.ViewModels.PagedResult<ECommercePlatform.Models.User>
 
 @{
     var keyword = ViewContext.HttpContext.Request.Query["keyword"].ToString();
@@ -23,7 +23,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var user in Model)
+        @foreach (var user in Model.Items)
         {
             <tr>
                 <td>@user.Username</td>
@@ -38,3 +38,8 @@
         }
     </tbody>
 </table>
+
+@{
+    ViewBag.RouteValues = new Dictionary<string, object>{ ["keyword"] = keyword };
+}
+<partial name="_Pagination" model="Model" />
