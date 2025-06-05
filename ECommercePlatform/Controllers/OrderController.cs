@@ -25,6 +25,98 @@ namespace ECommercePlatform.Controllers
             _logService = logService;
         }
 
+        #region API 方法
+        //API: 獲取用戶訂單
+        [HttpGet("/api/orders/{userId}")]
+        [Authorize(AuthenticationSchemes = "UserCookie")]
+        public async Task<IActionResult> GetUserOrdersApi(int userId)
+        {
+            // 檢查權限：只能查看自己的訂單或管理員查看
+            var currentUserId = int.Parse(User.Claims.First(c => c.Type == "UserId").Value);
+            var userRole = User.Claims.FirstOrDefault(c => c.Type == "UserRole")?.Value ?? "";
+
+            if (currentUserId != userId && userRole != "Admin" && userRole != "Engineer")
+            {
+                return Forbid();
+            }
+
+            var orders = await _context.Orders
+                .Where(o => o.UserId == userId)
+                .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Product)
+                .OrderByDescending(o => o.OrderDate)
+                .Select(o => new
+                {
+                    o.Id,
+                    o.TotalAmount,
+                    o.OrderDate,
+                    o.OrderStatus,
+                    o.PaymentMethod,
+                    Items = o.OrderItems.Select(i => new
+                    {
+                        i.Product.Name,
+                        i.Quantity,
+                        i.UnitPrice
+                    })
+                })
+                .ToListAsync();
+
+            return Json(new { success = true, data = orders });
+        }
+
+        //API: 創建訂單
+        [HttpPost("/api/orders")]
+        [Authorize(AuthenticationSchemes = "UserCookie")]
+        public async Task<IActionResult> CreateOrderApi([FromBody] CreateOrderApiRequest request)
+        {
+            try
+            {
+                var orderRequest = new CreateOrderRequest
+                {
+                    UserId = request.UserId,
+                    ShippingAddress = request.ShippingAddress,
+                    PaymentMethod = request.PaymentMethod,
+                    ShippingMethod = request.ShippingMethod ?? "standard"
+                };
+
+                var result = await _orderService.CreateOrderAsync(orderRequest);
+
+                if (result.IsSuccess)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        orderId = result.OrderId,
+                        message = result.Message
+                    });
+                }
+                else
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = result.Message,
+                        errors = result.Errors
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logService.Log("Order", "CreateApiError", "", ex.Message);
+                return StatusCode(500, new { success = false, message = "創建訂單失敗" });
+            }
+        }
+        #endregion
+
+        // DTO 類別
+        public class CreateOrderApiRequest
+        {
+            public int UserId { get; set; }
+            public string ShippingAddress { get; set; } = string.Empty;
+            public string PaymentMethod { get; set; } = string.Empty;
+            public string? ShippingMethod { get; set; }
+        }
+
         //我的訂單列表
         [HttpGet]
         [Route("orders")]
@@ -55,8 +147,8 @@ namespace ECommercePlatform.Controllers
                         Id = o.Id,
                         OrderDate = o.OrderDate,
                         TotalAmount = o.TotalAmount,
-                        OrderStatus = o.OrderStatus,
-                        PaymentMethod = o.PaymentMethod,
+                        OrderStatus = o.OrderStatus ?? "未知", // 修正 Null 問題
+                        PaymentMethod = o.PaymentMethod ?? "未指定", // 修正 Null 問題
                         ItemCount = o.OrderItems.Count(),
                         PaymentVerified = o.PaymentVerified
                     })
@@ -73,7 +165,7 @@ namespace ECommercePlatform.Controllers
                 // 獲取訂單狀態統計
                 var statusCounts = await _context.Orders
                     .Where(o => o.UserId == userId)
-                    .GroupBy(o => o.OrderStatus)
+                    .GroupBy(o => o.OrderStatus ?? "未知") // 修正 Null 問題
                     .Select(g => new { Status = g.Key, Count = g.Count() })
                     .ToListAsync();
 
@@ -359,10 +451,9 @@ namespace ECommercePlatform.Controllers
             }
         }
 
-        /// 獲取訂單歷史記錄
+        //獲取訂單歷史記錄
         private async Task<List<OrderHistoryItem>> GetOrderHistoryAsync(int orderId)
         {
-            // 這裡可以從操作日誌中獲取訂單相關的歷史記錄
             var history = new List<OrderHistoryItem>();
 
             try
@@ -384,24 +475,25 @@ namespace ECommercePlatform.Controllers
                         {
                             Status = "已付款",
                             Description = "付款確認完成",
-                            Timestamp = order.OrderDate.AddMinutes(5), // 估算時間
+                            Timestamp = order.OrderDate.AddMinutes(5),
                             IsCompleted = true
                         });
                     }
 
                     // 根據當前狀態添加相應的歷史記錄
                     var statusOrder = new[] { "待處理", "處理中", "已發貨", "已送達" };
-                    var currentIndex = Array.IndexOf(statusOrder, order.OrderStatus);
+                    var orderStatus = order.OrderStatus ?? "待處理"; // 修正 Null 問題
+                    var currentIndex = Array.IndexOf(statusOrder, orderStatus);
 
-                    for (int i = 1; i <= currentIndex; i++)
+                    for (int i = 1; i <= currentIndex && i < statusOrder.Length; i++)
                     {
-                        if (i < history.Count) continue;
+                        if (history.Count > i) continue;
 
                         history.Add(new OrderHistoryItem
                         {
                             Status = statusOrder[i],
                             Description = GetStatusDescription(statusOrder[i]),
-                            Timestamp = order.OrderDate.AddDays(i), // 估算時間
+                            Timestamp = order.OrderDate.AddDays(i),
                             IsCompleted = true
                         });
                     }
@@ -415,7 +507,7 @@ namespace ECommercePlatform.Controllers
             return history;
         }
 
-        private string GetStatusDescription(string status)
+        private static string GetStatusDescription(string? status)
         {
             return status switch
             {
@@ -424,82 +516,83 @@ namespace ECommercePlatform.Controllers
                 "已發貨" => "商品已發貨，正在配送中",
                 "已送達" => "商品已送達完成",
                 "已取消" => "訂單已取消",
+                null => "狀態未知",
                 _ => "狀態更新"
             };
         }
 
-        private string GenerateInvoiceHtml(OrderDetailsDto order)
+        private static string GenerateInvoiceHtml(OrderDetailsDto order)
         {
             return $@"
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset='UTF-8'>
-                    <title>訂單收據 #{order.Id}</title>
-                    <style>
-                        body {{ font-family: Arial, sans-serif; margin: 20px; }}
-                        .header {{ text-align: center; margin-bottom: 30px; }}
-                        .order-info {{ margin-bottom: 20px; }}
-                        table {{ width: 100%; border-collapse: collapse; }}
-                        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-                        th {{ background-color: #f2f2f2; }}
-                        .total {{ font-weight: bold; font-size: 18px; }}
-                    </style>
-                </head>
-                <body>
-                    <div class='header'>
-                        <h1>Ez購,Ez Life</h1>
-                        <h2>訂單收據 #{order.Id}</h2>
-                    </div>
-                    
-                    <div class='order-info'>
-                        <p><strong>訂購日期：</strong>{order.OrderDate:yyyy年MM月dd日 HH:mm}</p>
-                        <p><strong>客戶姓名：</strong>{order.CustomerName}</p>
-                        <p><strong>收件地址：</strong>{order.ShippingAddress}</p>
-                        <p><strong>付款方式：</strong>{order.PaymentMethod}</p>
-                        <p><strong>訂單狀態：</strong>{order.OrderStatus}</p>
-                    </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset='UTF-8'>
+            <title>訂單收據 #{order.Id}</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                .header {{ text-align: center; margin-bottom: 30px; }}
+                .order-info {{ margin-bottom: 20px; }}
+                table {{ width: 100%; border-collapse: collapse; }}
+                th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+                th {{ background-color: #f2f2f2; }}
+                .total {{ font-weight: bold; font-size: 18px; }}
+            </style>
+        </head>
+        <body>
+            <div class='header'>
+                <h1>Ez購,Ez Life</h1>
+                <h2>訂單收據 #{order.Id}</h2>
+            </div>
+            
+            <div class='order-info'>
+                <p><strong>訂購日期：</strong>{order.OrderDate:yyyy年MM月dd日 HH:mm}</p>
+                <p><strong>客戶姓名：</strong>{order.CustomerName ?? "未提供"}</p>
+                <p><strong>收件地址：</strong>{order.ShippingAddress ?? "未提供"}</p>
+                <p><strong>付款方式：</strong>{order.PaymentMethod ?? "未指定"}</p>
+                <p><strong>訂單狀態：</strong>{order.OrderStatus ?? "未知"}</p>
+            </div>
 
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>商品名稱</th>
-                                <th>數量</th>
-                                <th>單價</th>
-                                <th>小計</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {string.Join("", order.Items.Select(item => $@"
-                                <tr>
-                                    <td>{item.ProductName}</td>
-                                    <td>{item.Quantity}</td>
-                                    <td>NT$ {item.UnitPrice:N0}</td>
-                                    <td>NT$ {item.Subtotal:N0}</td>
-                                </tr>"))}
-                        </tbody>
-                        <tfoot>
-                            <tr class='total'>
-                                <td colspan='3'>總計</td>
-                                <td>NT$ {order.TotalAmount:N0}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
+            <table>
+                <thead>
+                    <tr>
+                        <th>商品名稱</th>
+                        <th>數量</th>
+                        <th>單價</th>
+                        <th>小計</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {string.Join("", order.Items.Select(item => $@"
+                        <tr>
+                            <td>{item.ProductName ?? "未知商品"}</td>
+                            <td>{item.Quantity}</td>
+                            <td>NT$ {item.UnitPrice:N0}</td>
+                            <td>NT$ {item.Subtotal:N0}</td>
+                        </tr>"))}
+                </tbody>
+                <tfoot>
+                    <tr class='total'>
+                        <td colspan='3'>總計</td>
+                        <td>NT$ {order.TotalAmount:N0}</td>
+                    </tr>
+                </tfoot>
+            </table>
 
-                    <p style='margin-top: 30px; text-align: center; color: #666;'>
-                        感謝您的購買！如有任何問題，請聯繫客服。
-                    </p>
-                </body>
-                </html>";
+            <p style='margin-top: 30px; text-align: center; color: #666;'>
+                感謝您的購買！如有任何問題，請聯繫客服。
+            </p>
+        </body>
+        </html>";
         }
-    }
 
-    // 輔助類別
-    public class OrderHistoryItem
-    {
-        public string Status { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public DateTime Timestamp { get; set; }
-        public bool IsCompleted { get; set; }
+        // 輔助類別
+        public class OrderHistoryItem
+        {
+            public string Status { get; set; } = string.Empty;
+            public string Description { get; set; } = string.Empty;
+            public DateTime Timestamp { get; set; }
+            public bool IsCompleted { get; set; }
+        }
     }
 }

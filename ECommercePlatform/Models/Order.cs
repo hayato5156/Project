@@ -13,8 +13,8 @@ namespace ECommercePlatform.Models
         public DateTime OrderDate { get; set; }
         public decimal TotalAmount { get; set; }
         public string? ShippingAddress { get; set; }
-        public string? PaymentMethod { get; set; }
-        public string? OrderStatus { get; set; }
+        public string PaymentMethod { get; set; } = string.Empty;
+        public string OrderStatus { get; set; } = string.Empty;
 
         public User User { get; set; } = null!;
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();

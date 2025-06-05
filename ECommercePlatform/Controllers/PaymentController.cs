@@ -30,9 +30,7 @@ namespace ECommercePlatform.Controllers
             _log = log;
         }
 
-        /// <summary>
-        /// 結帳頁面
-        /// </summary>
+        //結帳頁面
         [HttpGet]
         [Authorize(AuthenticationSchemes = "UserCookie")]
         [Route("checkout")]
@@ -112,9 +110,7 @@ namespace ECommercePlatform.Controllers
             }
         }
 
-        /// <summary>
-        /// 處理結帳提交
-        /// </summary>
+        //處理結帳提交
         [HttpPost]
         [Authorize(AuthenticationSchemes = "UserCookie")]
         [ValidateAntiForgeryToken]
@@ -166,9 +162,7 @@ namespace ECommercePlatform.Controllers
             }
         }
 
-        /// <summary>
-        /// 處理信用卡支付（藍新金流）
-        /// </summary>
+        //處理信用卡支付（藍新金流）
         private async Task<IActionResult> ProcessCreditCardPayment(int orderId)
         {
             try
@@ -227,9 +221,7 @@ namespace ECommercePlatform.Controllers
             }
         }
 
-        /// <summary>
         /// 處理 Line Pay 支付
-        /// </summary>
         private async Task<IActionResult> ProcessLinePayPayment(int orderId)
         {
             // 整合 Line Pay API
@@ -238,18 +230,14 @@ namespace ECommercePlatform.Controllers
             return RedirectToAction("OrderConfirm", new { id = orderId });
         }
 
-        /// <summary>
         /// 處理貨到付款
-        /// </summary>
         private IActionResult ProcessCashOnDelivery(int orderId)
         {
             // 貨到付款不需要線上支付，直接確認訂單
             return RedirectToAction("OrderConfirm", new { id = orderId });
         }
 
-        /// <summary>
         /// 藍新金流支付通知回調
-        /// </summary>
         [HttpPost]
         [Route("payment/notify")]
         public async Task<IActionResult> Notify([FromForm] string TradeInfo)
@@ -291,12 +279,12 @@ namespace ECommercePlatform.Controllers
             }
         }
 
-        /// <summary>
         /// 支付完成返回頁面
-        /// </summary>
         [HttpGet]
         [Route("payment/return")]
-        public async Task<IActionResult> Return(string? TradeInfo = null)
+        [HttpGet]
+        [Route("payment/return")]
+        public IActionResult Return(string? TradeInfo = null) // 移除 async，因為沒有 await
         {
             if (!string.IsNullOrEmpty(TradeInfo))
             {
@@ -308,7 +296,7 @@ namespace ECommercePlatform.Controllers
 
                     var decryptedData = DecryptAES(TradeInfo, hashKey, hashIV);
                     var result = JsonSerializer.Deserialize<Dictionary<string, object>>(decryptedData);
-                    var merchantOrderNo = ExtractMerchantOrderNo(result);
+                    var merchantOrderNo = ExtractMerchantOrderNo(result!); // 加上 null-forgiving operator
 
                     if (int.TryParse(merchantOrderNo, out int orderId))
                     {
@@ -324,9 +312,7 @@ namespace ECommercePlatform.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        /// <summary>
-        /// 訂單確認頁面
-        /// </summary>
+        //訂單確認頁面
         [HttpGet]
         [Authorize(AuthenticationSchemes = "UserCookie")]
         [Route("order/confirm/{id}")]
@@ -351,8 +337,7 @@ namespace ECommercePlatform.Controllers
             }
         }
 
-        // ===== 私有方法：加密解密工具 =====
-
+        //私有方法：加密解密工具
         private string EncryptAES(string plainText, string key, string iv)
         {
             using var aes = Aes.Create();

@@ -25,6 +25,55 @@ namespace ECommercePlatform.Controllers
             _inventoryService = inventoryService;
             _logService = logService;
         }
+        #region API 方法
+
+        //API: 獲取產品列表
+        [HttpGet("/api/products")]
+        public async Task<IActionResult> GetProductsApi()
+        {
+            var products = await _context.Products
+                .Where(p => p.IsActive)
+                .OrderByDescending(p => p.Id)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.Name,
+                    p.Description,
+                    p.Price,
+                    CurrentPrice = p.CurrentPrice,
+                    p.ImageUrl,
+                    HasDiscount = p.HasDiscount,
+                    AverageRating = p.AverageRating
+                })
+                .ToListAsync();
+
+            return Json(new { success = true, data = products });
+        }
+
+        //API: 根據ID獲取產品
+        [HttpGet("/api/products/{id}")]
+        public async Task<IActionResult> GetProductApi(int id)
+        {
+            var product = await _context.Products
+                .Where(p => p.Id == id && p.IsActive)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.Name,
+                    p.Description,
+                    p.Price,
+                    CurrentPrice = p.CurrentPrice,
+                    p.ImageUrl,
+                    HasDiscount = p.HasDiscount,
+                    AverageRating = p.AverageRating
+                })
+                .FirstOrDefaultAsync();
+
+            if (product == null) return NotFound();
+            return Json(new { success = true, data = product });
+        }
+
+        #endregion
 
         /// 前台：商品列表頁面
         [HttpGet]
@@ -523,30 +572,5 @@ namespace ECommercePlatform.Controllers
                 return null;
             }
         }
-    }
-}
-
-// 擴展的 ProductUploadDto
-namespace ECommercePlatform.Models.ViewModels
-{
-    public class ProductUploadDto
-    {
-        [Required(ErrorMessage = "產品名稱是必填的")]
-        public string Name { get; set; } = string.Empty;
-
-        public string? Description { get; set; }
-
-        [Range(0.01, double.MaxValue, ErrorMessage = "價格必須大於 0")]
-        public decimal Price { get; set; }
-
-        public decimal? DiscountPrice { get; set; }
-        public DateTime? DiscountStart { get; set; }
-        public DateTime? DiscountEnd { get; set; }
-
-        public IFormFile? ImageFile { get; set; }
-        public string? ImageUrl { get; set; }
-
-        [Range(0, int.MaxValue, ErrorMessage = "庫存不能為負數")]
-        public int? Stock { get; set; }
     }
 }

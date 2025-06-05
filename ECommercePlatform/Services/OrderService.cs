@@ -391,9 +391,9 @@ namespace ECommercePlatform.Services
                 TotalOrders = orders.Count,
                 TotalRevenue = orders.Sum(o => o.TotalAmount),
                 AverageOrderValue = orders.Count > 0 ? orders.Average(o => o.TotalAmount) : 0,
-                OrdersByStatus = orders.GroupBy(o => o.OrderStatus)
+                OrdersByStatus = orders.GroupBy(o => o.OrderStatus ?? "未知")
                     .ToDictionary(g => g.Key, g => g.Count()),
-                OrdersByPaymentMethod = orders.GroupBy(o => o.PaymentMethod)
+                OrdersByPaymentMethod = orders.GroupBy(o => o.PaymentMethod ?? "未知")
                     .ToDictionary(g => g.Key, g => g.Count()),
                 DailyTrends = orders.GroupBy(o => o.OrderDate.Date)
                     .Select(g => new DailyOrderCount

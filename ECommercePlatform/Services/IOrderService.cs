@@ -92,7 +92,7 @@
         public bool PaymentVerified { get; set; }
         public string CustomerName { get; set; } = string.Empty;
         public string CustomerEmail { get; set; } = string.Empty;
-        public List<OrderItemDto> Items { get; set; } = [];
+        public List<OrderItemDto> Items { get; set; } = new();
         public string? Notes { get; set; }
         public decimal ShippingCost { get; set; }
         public decimal Subtotal => Items.Sum(i => i.Subtotal);

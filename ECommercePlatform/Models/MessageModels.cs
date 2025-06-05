@@ -15,23 +15,4 @@ namespace ECommercePlatform.Models
         public bool Hatred { get; set; } = false;//仇恨或歧視內容
         public string detail { get; set; } = "無描述";
     }
-    public class Messages
-    {
-        public int messageID { get; set; } = 0;
-        public int replyID { get; set; } = 0;
-        public int userID { get; set; }
-        public int productID { get; set; }
-        public string userName { get; set; } = string.Empty;
-        public string main { get; set; } = string.Empty;
-        public DateTime date { get; set; } = DateTime.Now;
-        public int score { get; set; }
-        public byte[]? imageData { get; set; } = null;
-    }
-    //public class account
-    //{
-    //    public int ID { get; set; }
-    //    public string userName { get; set; } = "visitor";
-    //    public string Password { get; set; }
-    //    public string buyOrSell { get; set; } = "visitor";
-    //}
 }

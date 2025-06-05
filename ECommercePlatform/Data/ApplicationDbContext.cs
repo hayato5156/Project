@@ -45,8 +45,8 @@ namespace ECommercePlatform.Data
                 entity.Property(e => e.DiscountPrice).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.Stock).HasDefaultValue(0); //庫存預設值
 
-                // 添加庫存檢查約束
-                entity.HasCheckConstraint("CK_Product_Stock", "Stock >= 0");
+                // 添加庫存檢查約束 (使用新的語法)
+                entity.ToTable(t => t.HasCheckConstraint("CK_Product_Stock", "Stock >= 0"));
             });
 
             // Order 配置
@@ -186,7 +186,7 @@ namespace ECommercePlatform.Data
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
             });
 
-            // 新增：StockReservation 配置
+            //StockReservation 配置
             modelBuilder.Entity<StockReservation>(entity =>
             {
                 entity.HasKey(e => e.Id);
@@ -204,8 +204,8 @@ namespace ECommercePlatform.Data
                 entity.HasIndex(e => new { e.ProductId, e.ExpiresAt, e.IsConfirmed });
                 entity.HasIndex(e => e.ExpiresAt);
 
-                // 檢查約束
-                entity.HasCheckConstraint("CK_StockReservation_Quantity", "Quantity > 0");
+                // 檢查約束 (使用新的語法)
+                entity.ToTable(t => t.HasCheckConstraint("CK_StockReservation_Quantity", "Quantity > 0"));
             });
 
             // 新增：StockMovement 配置

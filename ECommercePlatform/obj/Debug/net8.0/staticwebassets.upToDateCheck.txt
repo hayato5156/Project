@@ -1,8 +1,3 @@
-wwwroot\Admin\dashboard.html
-wwwroot\Admin\htmlpage.html
-wwwroot\Admin\orders.html
-wwwroot\Admin\products.html
-wwwroot\Admin\users.html
 wwwroot\css\site.css
 wwwroot\engineer-login.html
 wwwroot\favicon.ico

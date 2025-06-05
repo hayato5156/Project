@@ -3,8 +3,8 @@
   "WorkspaceRootPath": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|c:\\users\\hayato5156\\documents\\github\\project\\ecommerceplatform\\models\\viewmodels\\productuploaddto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:models\\viewmodels\\productuploaddto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|c:\\users\\hayato5156\\documents\\github\\project\\ecommerceplatform\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|c:\\users\\hayato5156\\documents\\github\\project\\ecommerceplatform\\data\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -15,12 +15,8 @@
       "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:services\\orderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|c:\\users\\hayato5156\\documents\\github\\project\\ecommerceplatform\\services\\iorderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:services\\iorderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|c:\\users\\hayato5156\\documents\\github\\project\\ecommerceplatform\\services\\inventoryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:services\\inventoryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|c:\\users\\hayato5156\\documents\\github\\project\\ecommerceplatform\\views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{B2898D64-F45D-41AB-AFD8-D8D57B5857BF}|ECommercePlatform.csproj|solutionrelative:views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     }
   ],
   "DocumentGroupContainers": [
@@ -30,20 +26,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 3,
           "Children": [
             {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "ProductUploadDto.cs",
-              "DocumentMoniker": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Models\\ViewModels\\ProductUploadDto.cs",
-              "RelativeDocumentMoniker": "Models\\ViewModels\\ProductUploadDto.cs",
-              "ToolTip": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Models\\ViewModels\\ProductUploadDto.cs",
-              "RelativeToolTip": "Models\\ViewModels\\ProductUploadDto.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAwwAUAAAARAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-05T12:35:39.471Z",
-              "EditorCaption": ""
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{40ea2e6b-2121-4bb8-a43e-c83c04b51041}"
             },
             {
               "$type": "Document",
@@ -53,10 +40,9 @@
               "RelativeDocumentMoniker": "Data\\ApplicationDbContext.cs",
               "ToolTip": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Data\\ApplicationDbContext.cs",
               "RelativeToolTip": "Data\\ApplicationDbContext.cs",
-              "ViewState": "AgIAAAUAAAAAAAAAAIA+wBYAAAAVAAAAAAAAAA==",
+              "ViewState": "AgIAAM8AAAAAAAAAAAAuwOMAAAA8AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-05T12:35:35.373Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-05T14:12:39.43Z"
             },
             {
               "$type": "Document",
@@ -66,40 +52,34 @@
               "RelativeDocumentMoniker": "Services\\OrderService.cs",
               "ToolTip": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Services\\OrderService.cs",
               "RelativeToolTip": "Services\\OrderService.cs",
-              "ViewState": "AgIAANwAAAAAAAAAAAAQwPMBAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAHsBAAAAAAAAAAArwI0BAABDAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-05T12:35:22.819Z",
+              "WhenOpened": "2025-06-05T13:53:17.925Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "_Layout.cshtml",
+              "DocumentMoniker": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Views\\Shared\\_Layout.cshtml",
+              "RelativeDocumentMoniker": "Views\\Shared\\_Layout.cshtml",
+              "ToolTip": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Views\\Shared\\_Layout.cshtml",
+              "RelativeToolTip": "Views\\Shared\\_Layout.cshtml",
+              "ViewState": "AgIAAD8AAAAAAAAAAAAAAFAAAAA2AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-05T13:41:39.448Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 3,
-              "Title": "IOrderService.cs",
-              "DocumentMoniker": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Services\\IOrderService.cs",
-              "RelativeDocumentMoniker": "Services\\IOrderService.cs",
-              "ToolTip": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Services\\IOrderService.cs",
-              "RelativeToolTip": "Services\\IOrderService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAKQAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-05T12:34:55.304Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{40ea2e6b-2121-4bb8-a43e-c83c04b51041}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "InventoryService.cs",
-              "DocumentMoniker": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Services\\InventoryService.cs",
-              "RelativeDocumentMoniker": "Services\\InventoryService.cs",
-              "ToolTip": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Services\\InventoryService.cs",
-              "RelativeToolTip": "Services\\InventoryService.cs",
-              "ViewState": "AgIAAE8BAAAAAAAAAAAqwGEBAAARAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-05T11:31:18.589Z",
-              "EditorCaption": ""
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Views\\Home\\Index.cshtml",
+              "RelativeDocumentMoniker": "Views\\Home\\Index.cshtml",
+              "ToolTip": "C:\\Users\\hayato5156\\Documents\\GitHub\\Project\\ECommercePlatform\\Views\\Home\\Index.cshtml",
+              "RelativeToolTip": "Views\\Home\\Index.cshtml",
+              "ViewState": "AgIAAC0BAAAAAAAAAAAkwEYBAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-05T13:40:37.245Z"
             }
           ]
         }

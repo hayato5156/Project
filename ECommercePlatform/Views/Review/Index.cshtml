@@ -1,4 +1,4 @@
-@model IEnumerable<ECommercePlatform.Models.Messages>
+@model IEnumerable<ECommercePlatform.Models.Review>
 
 @{
     ViewData["Title"] = "商品評價";
@@ -10,8 +10,8 @@
     <div class="row mb-3">
         <div class="col-md-6">
             <p class="text-muted">
-                📝 總留言數：<strong>@ViewBag.totalMessages</strong> |
-                ⭐ 平均評分：<strong>@(ViewBag.averageScore?.ToString("0.0") ?? "0.0")</strong>
+                📝 總留言數：<strong>@(Model?.Count() ?? 0)</strong> |
+                ⭐ 平均評分：<strong>@(Model?.Any() == true ? Model.Average(r => r.Rating).ToString("0.0") : "0.0")</strong>
             </p>
         </div>
         @if (User.Identity?.IsAuthenticated == true)
@@ -28,17 +28,17 @@
     <div class="row" id="messageResult">
         @if (Model != null && Model.Any())
         {
-            foreach (var m in Model)
+            @foreach (var review in Model)
             {
                 <div class="col-md-6 mb-4">
                     <div class="card h-100 shadow-sm">
                         <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                            <strong>@m.userName</strong>
+                            <strong>@(review.UserName ?? review.User?.Username ?? "匿名用戶")</strong>
                             <div>
                                 <span class="text-warning">
                                     @for (int s = 1; s <= 5; s++)
                                     {
-                                        if (s <= m.score)
+                                        if (s <= review.Rating)
                                         {
                                             <text>★</text>
                                         }
@@ -51,15 +51,15 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <p>@m.main</p>
-                            @if (m.imageData != null)
+                            <p>@review.Content</p>
+                            @if (review.ImageData != null)
                             {
-                                <img src="data:image/png;base64,@Convert.ToBase64String(m.imageData)"
-                                     class="img-fluid rounded" alt="留言圖片" style="max-height: 200px;" />
+                                <img src="/reviews/image/@review.Id"
+                                     class="img-fluid rounded" alt="評價圖片" style="max-height: 200px;" />
                             }
                         </div>
                         <div class="card-footer small text-muted">
-                            <span>評價時間：@m.date.ToString("yyyy-MM-dd HH:mm")</span>
+                            <span>評價時間：@review.CreatedAt.ToString("yyyy-MM-dd HH:mm")</span>
                         </div>
                     </div>
                 </div>
@@ -87,7 +87,7 @@
     </div>
 </div>
 
-<!-- 新增評價模態框 -->
+@* 新增評價模態框 *@
 @if (User.Identity?.IsAuthenticated == true)
 {
     <div class="modal fade" id="addReviewModal" tabindex="-1">
@@ -101,7 +101,7 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">評分：</label>
-                            <select name="score" class="form-select" required>
+                            <select name="rating" class="form-select" required>
                                 <option value="">請選擇評分</option>
                                 <option value="5">⭐⭐⭐⭐⭐ 非常滿意</option>
                                 <option value="4">⭐⭐⭐⭐☆ 滿意</option>
@@ -112,11 +112,15 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">評價內容：</label>
-                            <textarea name="main" class="form-control" rows="4" placeholder="請描述您的使用體驗..." required></textarea>
+                            <textarea name="content" class="form-control" rows="4" placeholder="請描述您的使用體驗..." required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">產品ID：</label>
+                            <input type="number" name="productId" class="form-control" value="1" required />
                         </div>
                         <div class="mb-3">
                             <label class="form-label">上傳圖片（可選）：</label>
-                            <input type="file" name="image" class="form-control" accept="image/*" />
+                            <input type="file" name="imageFile" class="form-control" accept="image/*" />
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -136,20 +140,20 @@
             e.preventDefault();
 
             const formData = new FormData(this);
-            formData.append('userID', '@User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value');
-            formData.append('userName', '@User.Identity.Name');
-            formData.append('productID', 1); // 測試用
-            formData.append('replyID', 0);
 
             $.ajax({
-                url: '@Url.Action("SubmitMessage", "Review")',
+                url: '@Url.Action("Create", "Review")',
                 type: 'POST',
                 data: formData,
                 processData: false,
                 contentType: false,
                 success: function(result) {
-                    $('#addReviewModal').modal('hide');
-                    location.reload();
+                    if (result.success) {
+                        $('#addReviewModal').modal('hide');
+                        location.reload();
+                    } else {
+                        alert(result.message || '提交失敗');
+                    }
                 },
                 error: function() {
                     alert('提交失敗，請稍後重試');

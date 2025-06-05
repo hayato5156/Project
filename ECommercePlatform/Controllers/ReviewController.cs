@@ -13,13 +13,13 @@ namespace ECommercePlatform.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
-        private readonly OperationLogService _log;
+        private readonly OperationLogService _log; // 注意：這裡是 _log，不是 _logService
 
         public ReviewController(ApplicationDbContext context, EmailService emailService, OperationLogService log)
         {
             _context = context;
             _emailService = emailService;
-            _log = log;
+            _log = log; // 修正：使用 _log
         }
 
         //評價列表頁面（完全使用 EF Core + Review 模型）
@@ -108,7 +108,7 @@ namespace ECommercePlatform.Controllers
             }
             catch (Exception ex)
             {
-                _log.Log("Review", "IndexError", "", ex.Message);
+                _log.Log("Review", "IndexError", "", ex.Message); // 修正：使用 _log
                 return View(new ReviewListViewModel());
             }
         }
@@ -186,7 +186,7 @@ namespace ECommercePlatform.Controllers
                 _context.Reviews.Add(review);
                 await _context.SaveChangesAsync();
 
-                _log.Log("Review", "Create", review.Id.ToString(),
+                _log.Log("Review", "Create", review.Id.ToString(), // 修正：使用 _log
                     $"新增評價：{request.Rating}星，商品ID: {request.ProductId}");
 
                 return Json(new
@@ -198,7 +198,7 @@ namespace ECommercePlatform.Controllers
             }
             catch (Exception ex)
             {
-                _log.Log("Review", "CreateError", "", ex.Message);
+                _log.Log("Review", "CreateError", "", ex.Message); // 修正：使用 _log
                 return Json(new { success = false, message = "新增評價失敗，請稍後重試" });
             }
         }
