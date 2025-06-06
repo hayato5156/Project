@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ECommercePlatform.Data;
 using ECommercePlatform.Models;
+using ECommercePlatform.Models.ViewModels;
+using ECommercePlatform.Models.DTOs;
 using ECommercePlatform.Services;
 using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
@@ -644,112 +646,6 @@ namespace ECommercePlatform.Controllers
             catch
             {
                 return new List<dynamic>();
-            }
-        }
-    }
-
-    // 改良的 ViewModel 類別
-    public class ReviewListViewModel
-    {
-        public List<Review> Reviews { get; set; } = new();
-        public int TotalItems { get; set; }
-        public int PageNumber { get; set; }
-        public int PageSize { get; set; }
-        public int TotalReviews { get; set; }
-        public double AverageScore { get; set; }
-        public Dictionary<int, int> RatingDistribution { get; set; } = new();
-
-        // 新增統計屬性
-        public int RecentReviewsCount { get; set; }
-        public int WithImagesCount { get; set; }
-        public int WithAdminReplyCount { get; set; }
-
-        public int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
-        public bool HasPreviousPage => PageNumber > 1;
-        public bool HasNextPage => PageNumber < TotalPages;
-
-        // 評分分佈百分比
-        public Dictionary<int, double> RatingPercentages
-        {
-            get
-            {
-                if (TotalReviews == 0) return new Dictionary<int, double>();
-
-                return RatingDistribution.ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => (double)kvp.Value / TotalReviews * 100
-                );
-            }
-        }
-    }
-
-    // 評價請求模型
-    public class CreateReviewRequest
-    {
-        [Required]
-        public int ProductId { get; set; }
-
-        [Required]
-        [StringLength(1000, MinimumLength = 10, ErrorMessage = "評價內容必須在10-1000字之間")]
-        public string Content { get; set; } = string.Empty;
-
-        [Required]
-        [Range(1, 5, ErrorMessage = "評分必須在1-5星之間")]
-        public int Rating { get; set; }
-
-        public IFormFile? ImageFile { get; set; }
-    }
-
-    // 檢舉請求模型
-    public class ReportReviewRequest
-    {
-        [Required]
-        public int ReviewId { get; set; }
-
-        [Required]
-        [StringLength(100, ErrorMessage = "檢舉原因不能超過100字")]
-        public string Reason { get; set; } = string.Empty;
-
-        [StringLength(500, ErrorMessage = "詳細描述不能超過500字")]
-        public string? Description { get; set; }
-
-        public bool Harassment { get; set; } = false;
-        public bool Pornography { get; set; } = false;
-        public bool Threaten { get; set; } = false;
-        public bool Hatred { get; set; } = false;
-    }
-    namespace ECommercePlatform.Controllers
-    {
-        public class ReviewListViewModel
-        {
-            public List<Review> Reviews { get; set; } = new();
-            public int TotalItems { get; set; }
-            public int PageNumber { get; set; }
-            public int PageSize { get; set; }
-            public int TotalReviews { get; set; }
-            public double AverageScore { get; set; }
-            public Dictionary<int, int> RatingDistribution { get; set; } = new();
-
-            // 新增統計屬性
-            public int RecentReviewsCount { get; set; }
-            public int WithImagesCount { get; set; }
-            public int WithAdminReplyCount { get; set; }
-            public int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
-            public bool HasPreviousPage => PageNumber > 1;
-            public bool HasNextPage => PageNumber < TotalPages;
-
-            // 評分分佈百分比
-            public Dictionary<int, double> RatingPercentages
-            {
-                get
-                {
-                    if (TotalReviews == 0) return new Dictionary<int, double>();
-
-                    return RatingDistribution.ToDictionary(
-                        kvp => kvp.Key,
-                        kvp => (double)kvp.Value / TotalReviews * 100
-                    );
-                }
             }
         }
     }

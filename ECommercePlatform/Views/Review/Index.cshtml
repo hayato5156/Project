@@ -1,120 +1,8 @@
-@model ECommercePlatform.Controllers.ReviewListViewModel
+@model ECommercePlatform.Models.ViewModels.ReviewListViewModel
 
 @{
     ViewData["Title"] = "商品評價";
 }
-
-<!-- 搜尋和篩選 -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h6 class="mb-0">🔍 搜尋與篩選</h6>
-            </div>
-            <div class="card-body">
-                <form method="get" class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">關鍵字搜尋</label>
-                        <input type="text" name="keyword" value="@ViewBag.Keyword"
-                               class="form-control" placeholder="搜尋評價內容或商品..." />
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">評分篩選</label>
-                        <select name="scoreFilter" class="form-select">
-                            <option value="">所有評分</option>
-                            @{
-                                var scoreFilter = ViewBag.ScoreFilter?.ToString();
-                            }
-                            @if (scoreFilter == "5")
-                            {
-                                <option value="5" selected>⭐⭐⭐⭐⭐ 5星</option>
-                            }
-                            else
-                            {
-                                <option value="5">⭐⭐⭐⭐⭐ 5星</option>
-                            }
-                            @if (scoreFilter == "4")
-                            {
-                                <option value="4" selected>⭐⭐⭐⭐☆ 4星</option>
-                            }
-                            else
-                            {
-                                <option value="4">⭐⭐⭐⭐☆ 4星</option>
-                            }
-                            @if (scoreFilter == "3")
-                            {
-                                <option value="3" selected>⭐⭐⭐☆☆ 3星</option>
-                            }
-                            else
-                            {
-                                <option value="3">⭐⭐⭐☆☆ 3星</option>
-                            }
-                            @if (scoreFilter == "2")
-                            {
-                                <option value="2" selected>⭐⭐☆☆☆ 2星</option>
-                            }
-                            else
-                            {
-                                <option value="2">⭐⭐☆☆☆ 2星</option>
-                            }
-                            @if (scoreFilter == "1")
-                            {
-                                <option value="1" selected>⭐☆☆☆☆ 1星</option>
-                            }
-                            else
-                            {
-                                <option value="1">⭐☆☆☆☆ 1星</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">排序方式</label>
-                        <select name="sort" class="form-select">
-                            @{
-                                var sortValue = ViewBag.Sort?.ToString() ?? "latest";
-                            }
-                            @if (sortValue == "latest")
-                            {
-                                <option value="latest" selected>最新優先</option>
-                            }
-                            else
-                            {
-                                <option value="latest">最新優先</option>
-                            }
-                            @if (sortValue == "oldest")
-                            {
-                                <option value="oldest" selected>最舊優先</option>
-                            }
-                            else
-                            {
-                                <option value="oldest">最舊優先</option>
-                            }
-                            @if (sortValue == "highscore")
-                            {
-                                <option value="highscore" selected>高分優先</option>
-                            }
-                            else
-                            {
-                                <option value="highscore">高分優先</option>
-                            }
-                            @if (sortValue == "lowscore")
-                            {
-                                <option value="lowscore" selected>低分優先</option>
-                            }
-                            else
-                            {
-                                <option value="lowscore">低分優先</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">🔍 搜尋</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
 
 <div class="container">
     <h2 class="mb-4">📋 商品評價列表</h2>
@@ -126,3 +14,181 @@
                 ⭐ 平均評分：<strong>@Model.AverageScore.ToString("0.0")</strong>
             </p>
         </div>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <div class="col-md-6 text-end">
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addReviewModal">
+                    ✍️ 新增評價
+                </button>
+            </div>
+        }
+    </div>
+
+    <!-- 評價列表 -->
+    <div class="row" id="messageResult">
+        @if (Model.Reviews != null && Model.Reviews.Any())
+        {
+            @foreach (var review in Model.Reviews)
+            {
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <strong>@(review.UserName ?? review.User?.Username ?? "匿名用戶")</strong>
+                            <div>
+                                <span class="text-warning">
+                                    @for (int s = 1; s <= 5; s++)
+                                    {
+                                        if (s <= review.Rating)
+                                        {
+                                            <text>★</text>
+                                        }
+                                        else
+                                        {
+                                            <text>☆</text>
+                                        }
+                                    }
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p>@review.Content</p>
+                            @if (review.ImageData != null)
+                            {
+                                <img src="/reviews/image/@review.Id"
+                                     class="img-fluid rounded" alt="評價圖片" style="max-height: 200px;" />
+                            }
+                        </div>
+                        <div class="card-footer small text-muted">
+                            <span>評價時間：@review.CreatedAt.ToString("yyyy-MM-dd HH:mm")</span>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="alert alert-info text-center">
+                    <h5>📭 目前沒有評價</h5>
+                    <p>成為第一個評價的人吧！</p>
+                    <p><small class="text-muted">除錯資訊：Reviews 數量 = @(Model.Reviews?.Count() ?? 0)，總評價數 = @Model.TotalReviews</small></p>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addReviewModal">
+                            立即評價
+                        </button>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" class="btn btn-primary">登入後評價</a>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- 分頁 -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav aria-label="評價分頁">
+            <ul class="pagination justify-content-center">
+                @if (Model.HasPreviousPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="?page=@(Model.PageNumber - 1)">上一頁</a>
+                    </li>
+                }
+
+                @for (var i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(Model.PageNumber == i ? "active" : "")">
+                        <a class="page-link" href="?page=@i">@i</a>
+                    </li>
+                }
+
+                @if (Model.HasNextPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="?page=@(Model.PageNumber + 1)">下一頁</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+</div>
+
+@* 新增評價模態框 *@
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <div class="modal fade" id="addReviewModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">新增評價</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="addReviewForm" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">評分：</label>
+                            <select name="rating" class="form-select" required>
+                                <option value="">請選擇評分</option>
+                                <option value="5">⭐⭐⭐⭐⭐ 非常滿意</option>
+                                <option value="4">⭐⭐⭐⭐☆ 滿意</option>
+                                <option value="3">⭐⭐⭐☆☆ 普通</option>
+                                <option value="2">⭐⭐☆☆☆ 不滿意</option>
+                                <option value="1">⭐☆☆☆☆ 非常不滿意</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">評價內容：</label>
+                            <textarea name="content" class="form-control" rows="4" placeholder="請描述您的使用體驗..." required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">產品ID：</label>
+                            <input type="number" name="productId" class="form-control" value="1" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">上傳圖片（可選）：</label>
+                            <input type="file" name="imageFile" class="form-control" accept="image/*" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-success">提交評價</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // 新增評價
+        $('#addReviewForm').submit(function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            $.ajax({
+                url: '@Url.Action("Create", "Review")',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(result) {
+                    if (result.success) {
+                        $('#addReviewModal').modal('hide');
+                        location.reload();
+                    } else {
+                        alert(result.message || '提交失敗');
+                    }
+                },
+                error: function() {
+                    alert('提交失敗，請稍後重試');
+                }
+            });
+        });
+    </script>
+}
