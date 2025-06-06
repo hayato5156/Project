@@ -1,5 +1,4 @@
-﻿// 創建新文件：Models/ViewModels/ReviewListViewModel.cs
-using ECommercePlatform.Models;
+﻿using ECommercePlatform.Models;
 
 namespace ECommercePlatform.Models.ViewModels
 {
